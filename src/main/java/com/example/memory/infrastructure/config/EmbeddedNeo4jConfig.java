@@ -2,6 +2,9 @@ package com.example.memory.infrastructure.config;
 
 import org.neo4j.harness.Neo4j;
 import org.neo4j.harness.Neo4jBuilders;
+import org.neo4j.driver.AuthTokens;
+import org.neo4j.driver.Driver;
+import org.neo4j.driver.GraphDatabase;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -28,5 +31,11 @@ public class EmbeddedNeo4jConfig {
                 .withDisabledServer() // Disable HTTP server, we only need Bolt
                 .withFixture("MERGE (n:Entity {name: 'Root', type: 'System'})")
                 .build();
+    }
+
+    @Bean
+    @ConditionalOnProperty(name = "spring.neo4j.uri", matchIfMissing = true, havingValue = "embedded")
+    public Driver neo4jDriver(Neo4j neo4j) {
+        return GraphDatabase.driver(neo4j.boltURI(), AuthTokens.none());
     }
 }
