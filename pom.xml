@@ -41,7 +41,7 @@
         <dependency>
             <groupId>org.neo4j.test</groupId>
             <artifactId>neo4j-harness</artifactId>
-            <version>5.15.0</version>
+            <version>5.26.20</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
