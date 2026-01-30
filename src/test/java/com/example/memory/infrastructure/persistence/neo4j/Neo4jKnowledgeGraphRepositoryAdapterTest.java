@@ -1,7 +1,10 @@
 package com.example.memory.infrastructure.persistence.neo4j;
 
 import com.example.memory.domain.model.Entity;
+import com.example.memory.domain.model.EntityId;
 import com.example.memory.domain.model.Relation;
+import com.example.memory.domain.model.RelationType;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.neo4j.harness.Neo4j;
@@ -58,7 +61,7 @@ class Neo4jKnowledgeGraphRepositoryAdapterTest {
 
         List<Entity> results = repository.findAllEntities();
         assertFalse(results.isEmpty());
-        boolean found = results.stream().anyMatch(e -> e.name().equals("IntegrationTest"));
+        boolean found = results.stream().anyMatch(e -> e.name().equals(new EntityId("IntegrationTest")));
         assert (found);
     }
 
@@ -74,7 +77,8 @@ class Neo4jKnowledgeGraphRepositoryAdapterTest {
 
         List<Relation> relations = repository.findAllRelations();
         boolean found = relations.stream()
-                .anyMatch(r -> r.from().equals("N1") && r.to().equals("N2") && r.relationType().equals("TEST_REL"));
+                .anyMatch(r -> r.from().equals(new EntityId("N1")) && r.to().equals(new EntityId("N2"))
+                        && r.relationType().equals(new RelationType("TEST_REL")));
         assert (found);
     }
 }

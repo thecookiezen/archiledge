@@ -1,6 +1,7 @@
 package com.example.memory.infrastructure.persistence;
 
 import com.example.memory.domain.model.Entity;
+import com.example.memory.domain.model.EntityId;
 import com.example.memory.domain.model.Relation;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -24,7 +25,7 @@ class InMemoryKnowledgeGraphRepositoryTest {
 
         List<Entity> entities = repository.findAllEntities();
         assertEquals(1, entities.size());
-        assertEquals("test", entities.get(0).name());
+        assertEquals("test", entities.get(0).name().value());
     }
 
     @Test
@@ -34,7 +35,7 @@ class InMemoryKnowledgeGraphRepositoryTest {
 
         List<Relation> relations = repository.findAllRelations();
         assertEquals(1, relations.size());
-        assertEquals("connects", relations.get(0).relationType());
+        assertEquals("connects", relations.get(0).relationType().value());
     }
 
     @Test
@@ -52,7 +53,7 @@ class InMemoryKnowledgeGraphRepositoryTest {
         repository.saveEntity(new Entity("test", "concept"));
         repository.saveRelation(new Relation("test", "other", "rel"));
 
-        repository.deleteEntity("test");
+        repository.deleteEntity(new EntityId("test"));
 
         assertTrue(repository.findAllEntities().isEmpty());
         assertTrue(repository.findAllRelations().isEmpty());

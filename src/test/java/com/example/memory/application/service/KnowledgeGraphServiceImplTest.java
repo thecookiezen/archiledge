@@ -1,6 +1,7 @@
 package com.example.memory.application.service;
 
 import com.example.memory.domain.model.Entity;
+import com.example.memory.domain.model.EntityId;
 import com.example.memory.domain.model.Relation;
 import com.example.memory.domain.repository.KnowledgeGraphRepository;
 import org.junit.jupiter.api.Test;
@@ -35,14 +36,14 @@ class KnowledgeGraphServiceImplTest {
         List<Entity> result = service.createEntities(List.of(entity));
 
         assertEquals(1, result.size());
-        assertEquals("test", result.get(0).name());
+        assertEquals("test", result.get(0).name().value());
         verify(repository).saveEntity(any(Entity.class));
     }
 
     @Test
     void createRelations() {
         Relation relation = new Relation("from", "to", "type");
-        
+
         List<Relation> result = service.createRelations(List.of(relation));
 
         assertEquals(1, result.size());
@@ -64,7 +65,7 @@ class KnowledgeGraphServiceImplTest {
 
     @Test
     void deleteEntities() {
-        service.deleteEntities(List.of("test"));
-        verify(repository).deleteEntity("test");
+        service.deleteEntities(List.of(new EntityId("test")));
+        verify(repository).deleteEntity(new EntityId("test"));
     }
 }
