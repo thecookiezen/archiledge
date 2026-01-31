@@ -59,7 +59,7 @@ class Neo4jKnowledgeGraphRepositoryAdapterTest {
 
         List<Entity> results = repository.findAllEntities();
         assertFalse(results.isEmpty());
-        boolean found = results.stream().anyMatch(e -> e.name().equals(new EntityId("IntegrationTest")));
+        boolean found = results.stream().anyMatch(e -> e.name().equals(entity.name()));
         assert (found);
     }
 
