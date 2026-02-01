@@ -10,8 +10,7 @@ USER spring:spring
 # Copy the jar file. The jar is expected to be built by the CI pipeline before this stage.
 COPY target/*.jar app.jar
 
-# Expose the port (stdio transport doesn't technically use a port, but Neo4j/HTTP might)
-# Exposing 8080 just in case HTTP is enabled later
+# Expose the SSE transport port for MCP HTTP streaming
 EXPOSE 8080
 
 # Configure the entrypoint
