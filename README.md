@@ -103,6 +103,60 @@ export SPRING_NEO4J_AUTHENTICATION_PASSWORD=secret
 java -Dspring.profiles.active=neo4j -jar mcp/target/archiledger-server-0.0.1-SNAPSHOT.jar
 ```
 
+### Running with Docker
+
+The Docker image supports configurable data persistence and Neo4j port configuration.
+
+**Transient (Data lost when container stops):**
+```bash
+docker run -p 8080:8080 registry.hub.docker.com/thecookiezen/archiledger:latest
+```
+
+**Persistent (Data saved to host filesystem):**
+Mount a local directory to `/data/neo4j` inside the container:
+```bash
+docker run -p 8080:8080 -v /path/to/local/neo4j-data:/data/neo4j registry.hub.docker.com/thecookiezen/archiledger:latest
+```
+
+**With Neo4j Bolt port exposed (for Neo4j Browser access):**
+Expose the Bolt port to connect with external tools like Neo4j Browser:
+```bash
+docker run -p 8080:8080 -p 7687:7687 \
+  -v /path/to/local/neo4j-data:/data/neo4j \
+  registry.hub.docker.com/thecookiezen/archiledger:latest
+```
+
+**Custom Bolt port:**
+Override the default Bolt port (7687) using the `NEO4J_BOLT_PORT` environment variable:
+```bash
+docker run -p 8080:8080 -p 17687:17687 \
+  -e NEO4J_BOLT_PORT=17687 \
+  -v /path/to/local/neo4j-data:/data/neo4j \
+  registry.hub.docker.com/thecookiezen/archiledger:latest
+```
+
+**Custom data directory (Optional):**
+Override the default data directory path using the `NEO4J_DATA_DIR` environment variable:
+```bash
+docker run -p 8080:8080 -p 7687:7687 \
+  -e NEO4J_DATA_DIR=/custom/data/path \
+  -v /path/to/local/data:/custom/data/path \
+  registry.hub.docker.com/thecookiezen/archiledger:latest
+```
+
+#### Docker Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `NEO4J_DATA_DIR` | `/data/neo4j` | Directory where Neo4j stores its data |
+| `NEO4J_BOLT_PORT` | `7687` | Port for Neo4j Bolt connections |
+
+> **💡 Note:** The data directory at `/data/neo4j` (or your custom path) must be writable by the container user (UID 100, `spring` user). If you encounter permission errors, ensure your host directory has appropriate permissions:
+> ```bash
+> mkdir -p /path/to/local/neo4j-data
+> chmod 777 /path/to/local/neo4j-data  # or chown to UID 100
+> ```
+
 ## Configuration
 
 Configuration is located in `src/main/resources/application.properties`.

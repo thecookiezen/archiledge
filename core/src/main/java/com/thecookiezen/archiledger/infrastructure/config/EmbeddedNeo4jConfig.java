@@ -34,11 +34,14 @@ class EmbeddedNeo4jConfig {
     @Value("${memory.neo4j.data-dir:}")
     private String dataDir;
 
+    @Value("${memory.neo4j.bolt-port:0}")
+    private int boltPort;
+
     @Bean(destroyMethod = "close")
     @ConditionalOnProperty(name = "spring.neo4j.uri", matchIfMissing = true, havingValue = "embedded")
     public Neo4j embeddedNeo4jServer() throws IOException {
         if (dataDir != null && !dataDir.isBlank()) {
-            return new PersistentEmbeddedNeo4j(Path.of(dataDir));
+            return new PersistentEmbeddedNeo4j(Path.of(dataDir), boltPort);
         }
 
         return Neo4jBuilders.newInProcessBuilder()
@@ -58,16 +61,17 @@ class EmbeddedNeo4jConfig {
         private final GraphDatabaseService defaultDatabase;
         private final URI boltUri;
 
-        PersistentEmbeddedNeo4j(Path dataDir) throws IOException {
+        PersistentEmbeddedNeo4j(Path dataDir, int configuredBoltPort) throws IOException {
             boolean isNewDatabase = !Files.exists(dataDir.resolve("neostore.id"))
                     && !Files.exists(dataDir.resolve("data"));
             Files.createDirectories(dataDir);
 
-            int boltPort = findAvailablePort();
+            int boltPort = configuredBoltPort > 0 ? configuredBoltPort : findAvailablePort();
+            logger.info("Starting embedded Neo4j with Bolt port: {}", boltPort);
 
             this.managementService = new DatabaseManagementServiceBuilder(dataDir)
                     .setConfig(BoltConnector.enabled, true)
-                    .setConfig(BoltConnector.listen_address, new SocketAddress("localhost", boltPort))
+                    .setConfig(BoltConnector.listen_address, new SocketAddress("0.0.0.0", boltPort))
                     .build();
 
             this.boltUri = URI.create("bolt://localhost:" + boltPort);
