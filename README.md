@@ -63,6 +63,14 @@ java -Dspring.profiles.active=neo4j \
      -jar mcp/target/archiledge-server-0.0.1-SNAPSHOT.jar
 ```
 
+> **💡 Tip: Viewing the Graph with Neo4j Browser**
+>
+> When using embedded Neo4j, you can visualize your graph using [Neo4j Browser](https://github.com/neo4j/neo4j-browser). The embedded database exposes a Bolt endpoint on a dynamic port:
+> 1. **Keep** the Archiledge server running.
+> 2. Check the server logs for the Bolt URI, e.g.: `Driver instance ... created for server uri 'bolt://localhost:35157'`
+> 3. Open Neo4j Browser (default: http://localhost:8080) and connect using the Bolt URI from the logs.
+> 4. Run Cypher queries like `MATCH (n) RETURN n` to explore your knowledge graph.
+
 ### With Neo4j (External)
 Configure Neo4j connection details in `application.properties` or via environment variables, then run with the `neo4j` profile.
 
