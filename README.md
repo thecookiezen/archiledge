@@ -1,8 +1,30 @@
-# Archiledge (Memory MCP Server)
+# Archiledge
 
-Graph based implementation of the Model Context Protocol (MCP) Memory Server.
+**Give your AI assistant a persistent memory and the power to build knowledge graphs.**
+
+Archiledge is a [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server that enables LLM-based assistants to store, connect, and recall information using a graph database. Whether you need a personal memory bank that persists across conversations or want to analyze codebases and documents into structured knowledge graphs, Archiledge provides the infrastructure to make your AI truly remember.
 
 > **⚠️ Disclaimer:** This server currently implements **no authentication** mechanisms. Additionally, it relies on an **embedded graph database** (or in-memory storage) which is designed and optimized for **local development and testing environments only**. It is **not recommended for production use** in its current state.
+
+## Why Archiledge?
+
+LLMs are powerful, but they forget everything the moment a conversation ends. This creates frustrating experiences:
+
+- **Repeating yourself** — Telling your assistant the same preferences, project context, or decisions over and over
+- **Lost insights** — Valuable analysis from one session isn't available in the next
+- **No connected thinking** — Information lives in silos without relationships between concepts
+
+Archiledge solves this by giving your AI a **graph-based memory**:
+
+| Problem | Archiledge Solution |
+|---------|---------------------|
+| Context resets every conversation | Persistent storage that survives restarts |
+| Flat, disconnected notes | Graph structure with entities and relations |
+| Manual note-taking | AI automatically stores and retrieves relevant info |
+| Hard to explore large codebases | Build navigable knowledge graphs from code |
+| Investigation dead ends | Follow relationships to discover connections |
+
+The graph model is particularly powerful because knowledge isn't flat — concepts relate to each other. When your AI can traverse these connections, it can provide richer context and discover non-obvious relationships.
 
 ## Features
 
