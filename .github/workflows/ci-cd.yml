@@ -47,7 +47,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: archiledger-server-${{ steps.get_version.outputs.version }}
-        path: target/*.jar
+        path: mcp/target/*.jar
         retention-days: 1
 
   docker-publish:
@@ -64,7 +64,7 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: archiledger-server-${{ needs.build-and-test.outputs.version }}
-        path: target
+        path: mcp/target
         
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
