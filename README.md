@@ -96,3 +96,181 @@ server.port=8080
 
 Once the server is running, MCP clients can connect via:
 - **Streamable HTTP Endpoint**: `http://localhost:8080/mcp`
+
+---
+
+## Usage with LLM
+
+This MCP server can be used with LLM-based assistants (like GitHub Copilot, Gemini CLI, or other MCP-compatible clients) for various knowledge management scenarios. Below are two primary use cases with example instructions.
+
+### Use Case 1: Memory Bank
+
+Use the knowledge graph as a persistent memory bank to store and recall information across conversations. The LLM can remember context, preferences, project notes, and important decisions.
+
+```markdown
+# Memory Bank Instructions
+
+You have access to a knowledge graph MCP server that serves as your persistent memory. Use it to store and retrieve important information across our conversations.
+
+## Core Behaviors
+
+### Proactive Memory Storage
+When the user shares important information, store it automatically:
+- **Preferences**: User's coding style, preferred tools, naming conventions
+- **Decisions**: Architecture decisions, technology choices, rejected alternatives
+- **Context**: Project goals, constraints, team information
+- **Tasks**: Ongoing work, blockers, next steps
+
+### Memory Structure
+Use these entity types for organization:
+- `preference` - User preferences and settings
+- `decision` - Important decisions with rationale
+- `context` - Project or domain context
+- `task` - Work items and their status
+- `note` - General notes and observations
+- `person` - Team members and stakeholders
+
+### Creating Memories
+When storing information:
+1. Create an entity with a descriptive name
+2. Set the appropriate entityType
+3. Add detailed observations (store reasoning, not just facts)
+
+### Recalling Memories
+At the start of each conversation:
+1. Use `read_graph` to get an overview of stored knowledge
+2. Use `search_nodes` to find relevant context for the current task
+3. Reference stored decisions and preferences in your responses
+
+### Creating Relations
+Link related memories for better context.
+
+#### Relation Types
+- `RELATES_TO` - General relationship
+- `DEPENDS_ON` - Dependency relationship
+- `AFFECTS` - One thing impacts another
+- `PART_OF` - Component/container relationship
+- `SUPERSEDES` - Replaces previous decision/approach
+```
+
+---
+
+### Use Case 2: Codebase/Document Analysis
+
+Use the knowledge graph to build a structured representation of a codebase or document corpus. This is valuable for onboarding, architecture documentation, investigation, and understanding complex systems.
+
+```markdown
+# Codebase Knowledge Graph Builder
+
+You have access to a knowledge graph MCP server. Use it to create a structured knowledge base of the codebase for architecture documentation, onboarding, and investigation.
+
+## Analysis Workflow
+
+### Phase 1: High-Level Structure
+Start by mapping the overall architecture:
+1. Identify major modules, packages, or services
+2. Create entities for each architectural component
+3. Map dependencies between components
+
+### Phase 2: Deep Dive
+For each component, analyze and document:
+1. Key classes, interfaces, and their responsibilities
+2. Important functions and their purposes
+3. Data models and their relationships
+4. External integrations and APIs
+
+### Phase 3: Cross-Cutting Concerns
+Document patterns that span multiple components:
+1. Design patterns in use
+2. Shared utilities and helpers
+3. Configuration and environment handling
+4. Error handling strategies
+
+## Entity Types for Code Analysis
+
+Use these entity types:
+- `module` - Top-level packages, services, or bounded contexts
+- `component` - Major classes, interfaces, or subsystems
+- `function` - Important functions or methods
+- `model` - Data models, DTOs, entities
+- `pattern` - Design patterns in use
+- `config` - Configuration classes or files
+- `api` - External or internal API endpoints
+- `dependency` - External libraries or services
+
+## Creating Code Entities
+
+When analyzing code, create detailed entities.
+
+## Relation Types for Code
+
+Use these relation types:
+- `DEPENDS_ON` - Class/module depends on another
+- `IMPLEMENTS` - Implements an interface or contract
+- `EXTENDS` - Inherits from another class
+- `USES` - Utilizes another component
+- `CALLS` - Function calls another function
+- `CONTAINS` - Package contains class, class contains method
+- `PRODUCES` - Creates or emits events/messages
+- `CONSUMES` - Handles events/messages
+
+## Querying for Investigation
+
+Use the graph for code investigation:
+
+1. **Find dependencies**: Search for a component and examine its relations
+2. **Impact analysis**: Follow `DEPENDS_ON` relations to find affected components
+3. **Understand data flow**: Trace `CALLS`, `PRODUCES`, `CONSUMES` relations
+4. **Onboarding**: Start with `module` entities, then drill into `component` entities
+
+## Best Practices
+
+1. **Be consistent** with naming (use class names, not descriptions)
+2. **Include file paths** in observations for easy navigation
+3. **Document "why"** not just "what" - capture design rationale
+4. **Update incrementally** - add to the graph as you explore
+5. **Link generously** - relations are what make the graph valuable
+```
+
+---
+
+### MCP Server Configuration for LLM Clients
+
+Configure your LLM client to connect to the Archiledge MCP server. Below are examples for common clients.
+
+#### Gemini CLI (`settings.json`)
+
+```json
+{
+  "mcpServers": {
+    "archiledge": {
+      "httpUrl": "http://localhost:8080/mcp"
+    }
+  }
+}
+```
+
+#### VSCode / Copilot (MCP extension)
+
+```json
+{
+  "servers": {
+    "archiledge": {
+      "type": "http",
+      "url": "http://localhost:8080/mcp"
+    }
+  }
+}
+```
+
+#### Antigravity
+
+```json
+{
+  "mcpServers": {
+      "archiledge": {
+          "serverUrl": "http://localhost:8080/mcp"
+      }
+  }
+}
+```
