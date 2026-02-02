@@ -1,11 +1,11 @@
 package com.thecookiezen.archiledger.infrastructure.mcp;
 
-import com.thecookiezen.archiledge.application.service.KnowledgeGraphService;
-import com.thecookiezen.archiledge.domain.model.Entity;
-import com.thecookiezen.archiledge.domain.model.EntityId;
-import com.thecookiezen.archiledge.domain.model.EntityType;
-import com.thecookiezen.archiledge.domain.model.Relation;
-import com.thecookiezen.archiledge.domain.model.RelationType;
+import com.thecookiezen.archiledger.application.service.KnowledgeGraphService;
+import com.thecookiezen.archiledger.domain.model.Entity;
+import com.thecookiezen.archiledger.domain.model.EntityId;
+import com.thecookiezen.archiledger.domain.model.EntityType;
+import com.thecookiezen.archiledger.domain.model.Relation;
+import com.thecookiezen.archiledger.domain.model.RelationType;
 import com.thecookiezen.archiledger.infrastructure.mcp.dto.EntityDto;
 import com.thecookiezen.archiledger.infrastructure.mcp.dto.RelationDto;
 import org.springframework.ai.tool.annotation.Tool;

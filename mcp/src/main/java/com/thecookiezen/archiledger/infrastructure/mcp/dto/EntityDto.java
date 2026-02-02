@@ -1,6 +1,6 @@
 package com.thecookiezen.archiledger.infrastructure.mcp.dto;
 
-import com.thecookiezen.archiledge.domain.model.Entity;
+import com.thecookiezen.archiledger.domain.model.Entity;
 
 import java.util.List;
 

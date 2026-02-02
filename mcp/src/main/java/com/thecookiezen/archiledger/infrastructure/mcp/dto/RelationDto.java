@@ -1,6 +1,6 @@
 package com.thecookiezen.archiledger.infrastructure.mcp.dto;
 
-import com.thecookiezen.archiledge.domain.model.Relation;
+import com.thecookiezen.archiledger.domain.model.Relation;
 
 public record RelationDto(
         String from,
