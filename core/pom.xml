@@ -5,7 +5,7 @@
     <parent>
         <groupId>com.thecookiezen</groupId>
         <artifactId>archiledger-parent</artifactId>
-        <version>0.0.1-SNAPSHOT</version>
+        <version>${revision}</version>
     </parent>
     <artifactId>archiledger-core</artifactId>
     <name>archiledger-core</name>
