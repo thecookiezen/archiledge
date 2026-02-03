@@ -28,6 +28,7 @@
         <slf4j.version>2.0.16</slf4j.version>
         <logback.version>1.5.16</logback.version>
         <netty.version>4.1.118.Final</netty.version>
+        <assertj.version>3.27.7</assertj.version>
     </properties>
 
     <dependencyManagement>
