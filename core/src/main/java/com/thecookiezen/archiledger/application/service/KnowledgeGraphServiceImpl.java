@@ -6,6 +6,9 @@ import com.thecookiezen.archiledger.domain.model.EntityType;
 import com.thecookiezen.archiledger.domain.model.Relation;
 import com.thecookiezen.archiledger.domain.model.RelationType;
 import com.thecookiezen.archiledger.domain.repository.KnowledgeGraphRepository;
+
+import jakarta.annotation.PostConstruct;
+
 import com.thecookiezen.archiledger.domain.repository.EmbeddingsService;
 import org.springframework.stereotype.Service;
 
@@ -20,6 +23,11 @@ class KnowledgeGraphServiceImpl implements KnowledgeGraphService {
 
     private final KnowledgeGraphRepository repository;
     private final EmbeddingsService embeddingsService;
+
+    @PostConstruct
+    public void init() {
+        repository.findAllEntities().forEach(e -> embeddingsService.generateEmbeddings(e));
+    }
 
     KnowledgeGraphServiceImpl(KnowledgeGraphRepository repository, EmbeddingsService embeddingsService) {
         this.repository = repository;
