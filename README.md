@@ -2,7 +2,7 @@
 
 **Give your AI assistant a persistent memory and the power to build knowledge graphs.**
 
-Archiledger is a [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server that enables LLM-based assistants to store, connect, and recall information using a graph database. Whether you need a personal memory bank that persists across conversations or want to analyze codebases and documents into structured knowledge graphs, Archiledger provides the infrastructure to make your AI truly remember.
+Archiledger is a specialized **Knowledge Graph** that serves as a **RAG (Retrieval-Augmented Generation)** system, equipped with a naive **vector search** implementation. It is exposed as a [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server to enable LLM-based assistants to store, connect, and recall information using a graph database. Whether you need a personal memory bank that persists across conversations or want to analyze codebases and documents into structured knowledge graphs, Archiledger provides the infrastructure to make your AI truly remember.
 
 > **⚠️ Disclaimer:** This server currently implements **no authentication** mechanisms. Additionally, it relies on an **embedded graph database** (or in-memory storage) which is designed and optimized for **local development and testing environments only**. It is **not recommended for production use** in its current state.
 
@@ -23,6 +23,7 @@ Archiledger solves this by giving your AI a **graph-based memory**:
 | Manual note-taking | AI automatically stores and retrieves relevant info |
 | Hard to explore large codebases | Build navigable knowledge graphs from code |
 | Investigation dead ends | Follow relationships to discover connections |
+| Keyword search limits | **Vector search** finds semantically similar concepts |
 
 The graph model is particularly powerful because knowledge isn't flat — concepts relate to each other. When your AI can traverse these connections, it can provide richer context and discover non-obvious relationships.
 
@@ -45,6 +46,7 @@ The graph model is particularly powerful because knowledge isn't flat — concep
     - `get_related_entities`: Find all entities directly connected to a given entity.
     - `get_entity_types`: List all unique entity types in the graph.
     - `get_relation_types`: List all unique relation types in the graph.
+    - `similarity_search`: Find entities based on semantic similarity using embeddings.
 
 ## Architecture
 
@@ -213,7 +215,7 @@ When storing information:
 ### Recalling Memories
 At the start of each conversation:
 1. Use `read_graph` to get an overview of stored knowledge
-2. Use `search_nodes` to find relevant context for the current task
+2. Use `similarity_search` to find relevant context for the current task
 3. Reference stored decisions and preferences in your responses
 
 ### Creating Relations
