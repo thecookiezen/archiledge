@@ -42,7 +42,7 @@ public class McpToolAdapter {
                         @ToolParam(description = "List of relations to create") List<RelationDto> newRelations) {
                 List<Relation> domainRelations = newRelations.stream()
                                 .map(RelationDto::toDomain)
-                                .collect(Collectors.toList());
+                                .toList();
                 return knowledgeGraphService.createRelations(domainRelations).stream()
                                 .map(RelationDto::fromDomain)
                                 .collect(Collectors.toList());
