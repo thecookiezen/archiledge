@@ -14,7 +14,7 @@ public record RelationDto(
             throw new IllegalArgumentException("Relation to cannot be null or blank");
         }
         if (relationType == null || relationType.isBlank()) {
-            throw new IllegalArgumentException("Relation type cannot be null or blank");
+            throw new IllegalArgumentException("RelationType cannot be null or blank");
         }
     }
 
