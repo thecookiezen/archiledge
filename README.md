@@ -48,6 +48,31 @@ The graph model is particularly powerful because knowledge isn't flat — concep
     - `get_relation_types`: List all unique relation types in the graph.
     - `similarity_search`: Find entities based on semantic similarity using embeddings.
 
+## Known Limitations & Performance Characteristics
+
+> **⚠️ Important:** Application is designed for local development, personal use, and small-to-medium datasets. Review the following limitations before using in production-like scenarios.
+
+| Limitation | Impact | Notes/Mitigation |
+|------------|--------|------------------|
+| **Embedded Neo4j** | Single-process database with limited concurrency | Suitable for small datasets (<100k nodes). Use external Neo4j cluster for production workloads. |
+| **Naive vector search** | Linear O(n) similarity matching across all entities | No HNSW or specialized vector index. Performance degrades with dataset size. |
+| **Memory-bound embeddings** | In-memory vector store consumes heap space | Consider external vector DB (Pinecone, Weaviate) for datasets >10k entities. |
+| **No authentication** | All operations are unauthenticated | Intended for local/trusted environments only. |
+| **Heap-limited operations** | Large graph reads (`read_graph`) may OOM | Increase heap (`-Xmx`) or use pagination for large datasets. |
+
+### Performance Expectations (Embedded Neo4j)
+
+Based on load testing with 512MB heap:
+
+| Operation | Throughput | Notes |
+|-----------|------------|-------|
+| Entity creation | ~50-100 ops/sec | Using Cypher inserts |
+| Relation creation | ~30-60 ops/sec | Depends on graph connectivity |
+| Entity lookup by ID | <10ms | Direct index lookup |
+| Similarity search | O(n) | Scales linearly with entity count |
+
+> **💡 Tip:** For load testing see [LOAD_TESTING.md](./LOAD_TESTING.md).
+
 ## Architecture
 
 - **Domain Layer**: Contains the core business logic and entities (`Entity`, `Relation`). It defines the repository interface (`KnowledgeGraphRepository`).
