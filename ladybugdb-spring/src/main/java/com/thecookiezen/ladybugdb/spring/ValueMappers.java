@@ -128,7 +128,7 @@ public final class ValueMappers {
 
             for (long i = 0; i < size; i++) {
                 Value element = lbugList.getListElement(i);
-                result.add(elementMapper.apply(element.getValue()));
+                result.add(elementMapper.apply(element.getValue().toString()));
             }
 
             return result;
