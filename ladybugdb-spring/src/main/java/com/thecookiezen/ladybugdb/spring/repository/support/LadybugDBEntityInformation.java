@@ -3,17 +3,17 @@ package com.thecookiezen.ladybugdb.spring.repository.support;
 import org.springframework.data.repository.core.EntityInformation;
 
 /**
- * Entity information for LadybugDB entities.
+ * Entity information for LadybugDB node entities.
  *
  * @param <T>  the entity type
  * @param <ID> the ID type
  */
 public class LadybugDBEntityInformation<T, ID> implements EntityInformation<T, ID> {
 
-    private final EntityMetadata<T> metadata;
+    private final NodeMetadata<T> metadata;
 
     public LadybugDBEntityInformation(Class<T> domainClass) {
-        this.metadata = new EntityMetadata<>(domainClass);
+        this.metadata = new NodeMetadata<>(domainClass);
     }
 
     @Override
@@ -23,7 +23,6 @@ public class LadybugDBEntityInformation<T, ID> implements EntityInformation<T, I
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public ID getId(T entity) {
         return metadata.getId(entity);
     }

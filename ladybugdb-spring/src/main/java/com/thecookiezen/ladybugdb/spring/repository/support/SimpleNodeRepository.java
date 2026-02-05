@@ -1,7 +1,7 @@
 package com.thecookiezen.ladybugdb.spring.repository.support;
 
 import com.thecookiezen.ladybugdb.spring.core.LadybugDBTemplate;
-import com.thecookiezen.ladybugdb.spring.repository.LadybugDBRepository;
+import com.thecookiezen.ladybugdb.spring.repository.NodeRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,34 +10,29 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Default implementation of {@link LadybugDBRepository}.
- * Provides basic CRUD operations using {@link LadybugDBTemplate}.
- * <p>
- * This is a generic implementation that uses reflection for entity mapping.
- * For production use, you may want to extend this class and provide
- * entity-specific mapping logic.
+ * Default implementation of {@link NodeRepository}.
+ * Provides basic CRUD operations for node entities using
+ * {@link LadybugDBTemplate}.
  *
- * @param <T>  the domain type
- * @param <ID> the ID type
+ * @param <T>  the node entity type
+ * @param <ID> the primary key type
  */
-public class SimpleLadybugDBRepository<T, ID> implements LadybugDBRepository<T, ID> {
+public class SimpleNodeRepository<T, ID> implements NodeRepository<T, ID> {
 
-    private static final Logger logger = LoggerFactory.getLogger(SimpleLadybugDBRepository.class);
+    private static final Logger logger = LoggerFactory.getLogger(SimpleNodeRepository.class);
 
     protected final LadybugDBTemplate template;
-    protected final EntityMetadata<T> metadata;
+    protected final NodeMetadata<T> metadata;
 
-    public SimpleLadybugDBRepository(LadybugDBTemplate template, Class<T> domainType) {
+    public SimpleNodeRepository(LadybugDBTemplate template, Class<T> domainType) {
         this.template = template;
-        this.metadata = new EntityMetadata<>(domainType);
-        logger.debug("Created repository for entity type: {}", domainType.getName());
+        this.metadata = new NodeMetadata<>(domainType);
+        logger.debug("Created node repository for entity type: {}", domainType.getName());
     }
 
     @Override
     public <S extends T> S save(S entity) {
-        // This is a stub - actual implementation would use Cypher DSL
-        // to generate MERGE/CREATE statements based on entity metadata
-        logger.debug("Saving entity: {}", entity);
+        logger.debug("Saving node entity: {}", entity);
         throw new UnsupportedOperationException(
                 "Generic save not implemented. Override this method or use a concrete repository.");
     }
@@ -53,8 +48,7 @@ public class SimpleLadybugDBRepository<T, ID> implements LadybugDBRepository<T, 
 
     @Override
     public Optional<T> findById(ID id) {
-        // This is a stub - actual implementation would use Cypher DSL
-        logger.debug("Finding entity by ID: {}", id);
+        logger.debug("Finding node by ID: {}", id);
         throw new UnsupportedOperationException(
                 "Generic findById not implemented. Override this method or use a concrete repository.");
     }
@@ -66,8 +60,7 @@ public class SimpleLadybugDBRepository<T, ID> implements LadybugDBRepository<T, 
 
     @Override
     public Iterable<T> findAll() {
-        // This is a stub - actual implementation would use Cypher DSL
-        logger.debug("Finding all entities of type: {}", metadata.getNodeLabel());
+        logger.debug("Finding all nodes of type: {}", metadata.getNodeLabel());
         throw new UnsupportedOperationException(
                 "Generic findAll not implemented. Override this method or use a concrete repository.");
     }
@@ -83,16 +76,14 @@ public class SimpleLadybugDBRepository<T, ID> implements LadybugDBRepository<T, 
 
     @Override
     public long count() {
-        // This is a stub - actual implementation would use Cypher DSL
-        logger.debug("Counting entities of type: {}", metadata.getNodeLabel());
+        logger.debug("Counting nodes of type: {}", metadata.getNodeLabel());
         throw new UnsupportedOperationException(
                 "Generic count not implemented. Override this method or use a concrete repository.");
     }
 
     @Override
     public void deleteById(ID id) {
-        // This is a stub - actual implementation would use Cypher DSL
-        logger.debug("Deleting entity by ID: {}", id);
+        logger.debug("Deleting node by ID: {}", id);
         throw new UnsupportedOperationException(
                 "Generic deleteById not implemented. Override this method or use a concrete repository.");
     }
@@ -119,8 +110,7 @@ public class SimpleLadybugDBRepository<T, ID> implements LadybugDBRepository<T, 
 
     @Override
     public void deleteAll() {
-        // This is a stub - actual implementation would use Cypher DSL
-        logger.debug("Deleting all entities of type: {}", metadata.getNodeLabel());
+        logger.debug("Deleting all nodes of type: {}", metadata.getNodeLabel());
         throw new UnsupportedOperationException(
                 "Generic deleteAll not implemented. Override this method or use a concrete repository.");
     }
@@ -129,7 +119,7 @@ public class SimpleLadybugDBRepository<T, ID> implements LadybugDBRepository<T, 
         return template;
     }
 
-    protected EntityMetadata<T> getMetadata() {
+    protected NodeMetadata<T> getMetadata() {
         return metadata;
     }
 }

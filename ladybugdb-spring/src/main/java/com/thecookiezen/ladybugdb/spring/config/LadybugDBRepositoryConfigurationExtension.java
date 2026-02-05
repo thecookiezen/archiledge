@@ -1,6 +1,6 @@
 package com.thecookiezen.ladybugdb.spring.config;
 
-import com.thecookiezen.ladybugdb.spring.repository.LadybugDBRepository;
+import com.thecookiezen.ladybugdb.spring.repository.NodeRepository;
 import com.thecookiezen.ladybugdb.spring.repository.support.LadybugDBRepositoryFactoryBean;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.data.repository.config.RepositoryConfigurationExtensionSupport;
@@ -35,7 +35,7 @@ public class LadybugDBRepositoryConfigurationExtension extends RepositoryConfigu
 
     @Override
     protected Collection<Class<?>> getIdentifyingTypes() {
-        return Collections.singleton(LadybugDBRepository.class);
+        return Collections.singleton(NodeRepository.class);
     }
 
     @Override

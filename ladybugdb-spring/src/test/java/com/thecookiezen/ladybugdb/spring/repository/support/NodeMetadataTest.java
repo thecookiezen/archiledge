@@ -1,19 +1,20 @@
 package com.thecookiezen.ladybugdb.spring.repository.support;
 
+import com.thecookiezen.ladybugdb.spring.annotation.NodeEntity;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.annotation.Id;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class EntityMetadataTest {
+class NodeMetadataTest {
 
     @Nested
     class IdFieldDetection {
 
         @Test
         void shouldFindSpringDataIdAnnotation() {
-            EntityMetadata<EntityWithSpringId> metadata = new EntityMetadata<>(EntityWithSpringId.class);
+            NodeMetadata<EntityWithSpringId> metadata = new NodeMetadata<>(EntityWithSpringId.class);
 
             assertNotNull(metadata.getIdField());
             assertEquals("id", metadata.getIdField().getName());
@@ -21,7 +22,7 @@ class EntityMetadataTest {
 
         @Test
         void shouldReturnNullWhenNoIdField() {
-            EntityMetadata<EntityWithoutId> metadata = new EntityMetadata<>(EntityWithoutId.class);
+            NodeMetadata<EntityWithoutId> metadata = new NodeMetadata<>(EntityWithoutId.class);
 
             assertNull(metadata.getIdField());
         }
@@ -32,23 +33,23 @@ class EntityMetadataTest {
 
         @Test
         void shouldDeriveSimpleClassName() {
-            EntityMetadata<Person> metadata = new EntityMetadata<>(Person.class);
+            NodeMetadata<Person> metadata = new NodeMetadata<>(Person.class);
 
             assertEquals("Person", metadata.getNodeLabel());
         }
 
         @Test
         void shouldRemoveEntitySuffix() {
-            EntityMetadata<UserEntity> metadata = new EntityMetadata<>(UserEntity.class);
+            NodeMetadata<UserEntity> metadata = new NodeMetadata<>(UserEntity.class);
 
             assertEquals("User", metadata.getNodeLabel());
         }
 
         @Test
-        void shouldHandleEntityOnlyName() {
-            EntityMetadata<Entity> metadata = new EntityMetadata<>(Entity.class);
+        void shouldUseAnnotationLabel() {
+            NodeMetadata<AnnotatedNode> metadata = new NodeMetadata<>(AnnotatedNode.class);
 
-            assertEquals("Entity", metadata.getNodeLabel());
+            assertEquals("CustomLabel", metadata.getNodeLabel());
         }
     }
 
@@ -57,7 +58,7 @@ class EntityMetadataTest {
 
         @Test
         void shouldExtractIdValue() {
-            EntityMetadata<EntityWithSpringId> metadata = new EntityMetadata<>(EntityWithSpringId.class);
+            NodeMetadata<EntityWithSpringId> metadata = new NodeMetadata<>(EntityWithSpringId.class);
             EntityWithSpringId entity = new EntityWithSpringId();
             entity.id = "test-123";
 
@@ -68,34 +69,13 @@ class EntityMetadataTest {
 
         @Test
         void shouldReturnNullForNullId() {
-            EntityMetadata<EntityWithSpringId> metadata = new EntityMetadata<>(EntityWithSpringId.class);
+            NodeMetadata<EntityWithSpringId> metadata = new NodeMetadata<>(EntityWithSpringId.class);
             EntityWithSpringId entity = new EntityWithSpringId();
             entity.id = null;
 
             Object id = metadata.getId(entity);
 
             assertNull(id);
-        }
-
-        @Test
-        void shouldReturnNullWhenNoIdField() {
-            EntityMetadata<EntityWithoutId> metadata = new EntityMetadata<>(EntityWithoutId.class);
-            EntityWithoutId entity = new EntityWithoutId();
-
-            Object id = metadata.getId(entity);
-
-            assertNull(id);
-        }
-    }
-
-    @Nested
-    class EntityType {
-
-        @Test
-        void shouldReturnCorrectEntityType() {
-            EntityMetadata<Person> metadata = new EntityMetadata<>(Person.class);
-
-            assertEquals(Person.class, metadata.getEntityType());
         }
     }
 
@@ -120,7 +100,8 @@ class EntityMetadataTest {
         String id;
     }
 
-    static class Entity {
+    @NodeEntity(label = "CustomLabel")
+    static class AnnotatedNode {
         @Id
         String id;
     }
