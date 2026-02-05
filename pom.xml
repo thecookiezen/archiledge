@@ -16,6 +16,7 @@
     <packaging>pom</packaging>
 
     <modules>
+        <module>ladybugdb-spring</module>
         <module>core</module>
         <module>mcp</module>
     </modules>
