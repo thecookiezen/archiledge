@@ -41,7 +41,14 @@ public final class ValueMappers {
         if (value == null || value.isNull()) {
             return null;
         }
-        return Integer.parseInt(value.getValue().toString());
+        Object rawValue = value.getValue();
+        if (rawValue instanceof Integer i) {
+            return i;
+        }
+        if (rawValue instanceof Number n) {
+            return n.intValue();
+        }
+        return Integer.parseInt(rawValue.toString());
     }
 
     /**
@@ -54,7 +61,14 @@ public final class ValueMappers {
         if (value == null || value.isNull()) {
             return null;
         }
-        return Long.parseLong(value.getValue().toString());
+        Object rawValue = value.getValue();
+        if (rawValue instanceof Long l) {
+            return l;
+        }
+        if (rawValue instanceof Number n) {
+            return n.longValue();
+        }
+        return Long.parseLong(rawValue.toString());
     }
 
     /**
@@ -67,7 +81,14 @@ public final class ValueMappers {
         if (value == null || value.isNull()) {
             return null;
         }
-        return Double.parseDouble(value.getValue().toString());
+        Object rawValue = value.getValue();
+        if (rawValue instanceof Double d) {
+            return d;
+        }
+        if (rawValue instanceof Number n) {
+            return n.doubleValue();
+        }
+        return Double.parseDouble(rawValue.toString());
     }
 
     /**
@@ -80,7 +101,11 @@ public final class ValueMappers {
         if (value == null || value.isNull()) {
             return null;
         }
-        return Boolean.parseBoolean(value.getValue().toString());
+        Object rawValue = value.getValue();
+        if (rawValue instanceof Boolean b) {
+            return b;
+        }
+        return Boolean.parseBoolean(rawValue.toString());
     }
 
     /**

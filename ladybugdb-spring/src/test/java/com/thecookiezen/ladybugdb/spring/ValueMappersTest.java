@@ -3,7 +3,6 @@ package com.thecookiezen.ladybugdb.spring;
 import com.ladybugdb.Connection;
 import com.ladybugdb.Database;
 import com.ladybugdb.QueryResult;
-import com.ladybugdb.Value;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
