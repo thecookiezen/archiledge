@@ -19,6 +19,7 @@ public class LadybugDBRepositoryFactoryBean<T extends Repository<S, ID>, S, ID>
         extends RepositoryFactoryBeanSupport<T, S, ID> {
 
     private LadybugDBTemplate template;
+    private EntityRegistry entityRegistry;
 
     protected LadybugDBRepositoryFactoryBean(Class<? extends T> repositoryInterface) {
         super(repositoryInterface);
@@ -29,8 +30,13 @@ public class LadybugDBRepositoryFactoryBean<T extends Repository<S, ID>, S, ID>
         this.template = template;
     }
 
+    @Autowired
+    public void setEntityRegistry(EntityRegistry entityRegistry) {
+        this.entityRegistry = entityRegistry;
+    }
+
     @Override
     protected RepositoryFactorySupport createRepositoryFactory() {
-        return new LadybugDBRepositoryFactory(template);
+        return new LadybugDBRepositoryFactory(template, entityRegistry);
     }
 }

@@ -16,9 +16,11 @@ import org.springframework.data.repository.core.support.RepositoryFactorySupport
 public class LadybugDBRepositoryFactory extends RepositoryFactorySupport {
 
     private final LadybugDBTemplate template;
+    private final EntityRegistry entityRegistry;
 
-    public LadybugDBRepositoryFactory(LadybugDBTemplate template) {
+    public LadybugDBRepositoryFactory(LadybugDBTemplate template, EntityRegistry entityRegistry) {
         this.template = template;
+        this.entityRegistry = entityRegistry;
     }
 
     @Override
@@ -26,9 +28,14 @@ public class LadybugDBRepositoryFactory extends RepositoryFactorySupport {
         return new LadybugDBEntityInformation<>(domainClass);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     protected Object getTargetRepository(RepositoryInformation metadata) {
         Class<?> repositoryInterface = metadata.getRepositoryInterface();
+
+        Class<?> domainType = metadata.getDomainType();
+
+        EntityDescriptor<?> descriptor = entityRegistry.getDescriptor(domainType);
 
         if (RelationshipRepository.class.isAssignableFrom(repositoryInterface)) {
             // For relationships, we need source and target types from generics
@@ -36,11 +43,12 @@ public class LadybugDBRepositoryFactory extends RepositoryFactorySupport {
             return new SimpleRelationshipRepository<>(
                     template,
                     metadata.getDomainType(),
+                    // entityRegistry.getDescriptor(metadata.getDomainType()),
                     Object.class,
                     Object.class);
         }
 
-        return new SimpleNodeRepository<>(template, metadata.getDomainType());
+        return new SimpleNodeRepository<>(template, (Class<Object>) domainType, (EntityDescriptor<Object>) descriptor);
     }
 
     @Override

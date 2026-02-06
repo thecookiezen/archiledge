@@ -5,11 +5,6 @@ import com.thecookiezen.ladybugdb.spring.annotation.NodeEntity;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 
-/**
- * Metadata about a node entity type, including label and ID property.
- *
- * @param <T> the node entity type
- */
 public class NodeMetadata<T> {
 
     private final Class<T> entityType;
@@ -25,13 +20,10 @@ public class NodeMetadata<T> {
     }
 
     private String determineNodeLabel(Class<T> entityType) {
-        // Check for @NodeEntity annotation
         NodeEntity annotation = entityType.getAnnotation(NodeEntity.class);
         if (annotation != null && !annotation.label().isEmpty()) {
             return annotation.label();
         }
-
-        // Fallback: use simple class name with "Entity" suffix removed
         String className = entityType.getSimpleName();
         if (className.endsWith("Entity") && className.length() > 6) {
             return className.substring(0, className.length() - 6);
@@ -49,7 +41,6 @@ public class NodeMetadata<T> {
                 }
             }
         }
-        // Fallback: look for field named "id"
         try {
             Field idField = entityType.getDeclaredField("id");
             idField.setAccessible(true);
