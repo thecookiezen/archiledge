@@ -12,7 +12,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -56,10 +55,9 @@ public class SimpleNodeRepository<T, ID> implements NodeRepository<T, ID> {
                 .map(e -> n.property(e.getKey()).to(Cypher.literalOf(e.getValue())))
                 .toList();
 
-        var returnExpressions = new ArrayList<Expression>();
-        returnExpressions.add(n.property(metadata.getIdPropertyName()));
-        returnExpressions.addAll(decomposed.keySet().stream()
-                .map(n::property).toList());
+        var returnExpressions = metadata.getPropertyNames().stream()
+                .map(n::property)
+                .toArray(Expression[]::new);
 
         Statement statement = Cypher
                 .merge(n)
@@ -87,8 +85,8 @@ public class SimpleNodeRepository<T, ID> implements NodeRepository<T, ID> {
         Node n = Cypher.node(metadata.getNodeLabel()).named("n")
                 .withProperties(metadata.getIdPropertyName(), Cypher.literalOf(id));
 
-        var returnExpressions = Arrays.stream(metadata.getEntityType().getDeclaredFields())
-                .map(field -> n.property(field.getName()))
+        var returnExpressions = metadata.getPropertyNames().stream()
+                .map(n::property)
                 .toArray(Expression[]::new);
 
         Statement statement = Cypher.match(n)
@@ -108,8 +106,8 @@ public class SimpleNodeRepository<T, ID> implements NodeRepository<T, ID> {
         logger.debug("Finding all nodes of type: {}", metadata.getNodeLabel());
         Node n = Cypher.node(metadata.getNodeLabel()).named("n");
 
-        var returnExpressions = Arrays.stream(metadata.getEntityType().getDeclaredFields())
-                .map(field -> n.property(field.getName()))
+        var returnExpressions = metadata.getPropertyNames().stream()
+                .map(n::property)
                 .toArray(Expression[]::new);
 
         Statement statement = Cypher.match(n)

@@ -4,6 +4,8 @@ import com.thecookiezen.ladybugdb.spring.annotation.NodeEntity;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
+import java.util.Arrays;
+import java.util.List;
 
 public class NodeMetadata<T> {
 
@@ -11,12 +13,24 @@ public class NodeMetadata<T> {
     private final String nodeLabel;
     private final Field idField;
     private final String idPropertyName;
+    private final List<String> propertyNames;
 
     public NodeMetadata(Class<T> entityType) {
         this.entityType = entityType;
         this.nodeLabel = determineNodeLabel(entityType);
         this.idField = findIdField(entityType);
         this.idPropertyName = idField != null ? idField.getName() : "id";
+        this.propertyNames = extractPropertyNames(entityType);
+    }
+
+    private List<String> extractPropertyNames(Class<T> entityType) {
+        return Arrays.stream(entityType.getDeclaredFields())
+                .map(Field::getName)
+                .toList();
+    }
+
+    public List<String> getPropertyNames() {
+        return propertyNames;
     }
 
     private String determineNodeLabel(Class<T> entityType) {
