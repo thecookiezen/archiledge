@@ -68,9 +68,9 @@ public class LadybugDBTemplate {
      */
     public void execute(String cypher) {
         execute(connection -> {
-            logger.info("Executing Cypher: {}", cypher);
+            logger.debug("Executing Cypher: {}", cypher);
             QueryResult result = connection.query(cypher);
-            logger.info("Execute result: {}", result);
+            logger.debug("Execute result: {}", result);
             return null;
         });
     }

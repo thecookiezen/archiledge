@@ -5,12 +5,14 @@ import com.thecookiezen.ladybugdb.spring.mapper.ValueMappers;
 import com.thecookiezen.ladybugdb.spring.repository.NodeRepository;
 
 import org.neo4j.cypherdsl.core.Cypher;
+import org.neo4j.cypherdsl.core.Expression;
 import org.neo4j.cypherdsl.core.Node;
 import org.neo4j.cypherdsl.core.Statement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -48,14 +50,21 @@ public class SimpleNodeRepository<T, ID> implements NodeRepository<T, ID> {
         Node n = Cypher.node(metadata.getNodeLabel()).named("n")
                 .withProperties(metadata.getIdPropertyName(), Cypher.literalOf(metadata.getId(entity)));
 
-        var setOperations = descriptor.writer().decompose(entity).entrySet().stream()
+        var decomposed = descriptor.writer().decompose(entity);
+
+        var setOperations = decomposed.entrySet().stream()
                 .map(e -> n.property(e.getKey()).to(Cypher.literalOf(e.getValue())))
                 .toList();
+
+        var returnExpressions = new ArrayList<Expression>();
+        returnExpressions.add(n.property(metadata.getIdPropertyName()));
+        returnExpressions.addAll(decomposed.keySet().stream()
+                .map(n::property).toList());
 
         Statement statement = Cypher
                 .merge(n)
                 .set(setOperations)
-                .returning(n)
+                .returning(returnExpressions)
                 .build();
 
         return (S) template.queryForObject(statement, descriptor.reader())
@@ -78,8 +87,12 @@ public class SimpleNodeRepository<T, ID> implements NodeRepository<T, ID> {
         Node n = Cypher.node(metadata.getNodeLabel()).named("n")
                 .withProperties(metadata.getIdPropertyName(), Cypher.literalOf(id));
 
+        var returnExpressions = Arrays.stream(metadata.getEntityType().getDeclaredFields())
+                .map(field -> n.property(field.getName()))
+                .toArray(Expression[]::new);
+
         Statement statement = Cypher.match(n)
-                .returning(Cypher.asterisk())
+                .returning(returnExpressions)
                 .build();
 
         return template.queryForObject(statement, descriptor.reader());
@@ -93,8 +106,14 @@ public class SimpleNodeRepository<T, ID> implements NodeRepository<T, ID> {
     @Override
     public Iterable<T> findAll() {
         logger.debug("Finding all nodes of type: {}", metadata.getNodeLabel());
-        Statement statement = Cypher.match(Cypher.node(metadata.getNodeLabel()).named("n"))
-                .returning(Cypher.asterisk())
+        Node n = Cypher.node(metadata.getNodeLabel()).named("n");
+
+        var returnExpressions = Arrays.stream(metadata.getEntityType().getDeclaredFields())
+                .map(field -> n.property(field.getName()))
+                .toArray(Expression[]::new);
+
+        Statement statement = Cypher.match(n)
+                .returning(returnExpressions)
                 .build();
 
         return template.query(statement, descriptor.reader());
@@ -129,7 +148,7 @@ public class SimpleNodeRepository<T, ID> implements NodeRepository<T, ID> {
                 .withProperties(metadata.getIdPropertyName(), Cypher.literalOf(id));
 
         Statement statement = Cypher.match(n)
-                .delete(n)
+                .detachDelete(n)
                 .build();
 
         template.execute(statement);
@@ -158,8 +177,12 @@ public class SimpleNodeRepository<T, ID> implements NodeRepository<T, ID> {
     @Override
     public void deleteAll() {
         logger.debug("Deleting all nodes of type: {}", metadata.getNodeLabel());
-        throw new UnsupportedOperationException(
-                "Generic deleteAll not implemented. Override this method or use a concrete repository.");
+        Node n = Cypher.node(metadata.getNodeLabel()).named("n");
+        Statement statement = Cypher.match(n)
+                .detachDelete(n)
+                .build();
+
+        template.execute(statement);
     }
 
     protected LadybugDBTemplate getTemplate() {

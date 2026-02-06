@@ -222,6 +222,6 @@ class SimpleNodeRepositoryTest {
     };
 
     static EntityWriter<Person> personWriter = (entity) -> {
-        return Map.of("name", entity.name, "age", entity.age);
+        return Map.of("age", entity.age);
     };
 }
