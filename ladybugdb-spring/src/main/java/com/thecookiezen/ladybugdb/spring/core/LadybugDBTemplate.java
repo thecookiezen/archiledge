@@ -114,13 +114,11 @@ public class LadybugDBTemplate {
                 logger.debug("Query result row {}: {}", rowNum, row);
 
                 try {
-                    // Build column map for all columns
                     Map<String, Value> columns = new HashMap<>();
                     for (int i = 0; i < result.getNumColumns(); i++) {
                         columns.put(result.getColumnName(i), row.getValue(i));
                     }
 
-                    // Wrap in QueryRow for typed access
                     QueryRow queryRow = new DefaultQueryRow(columns);
                     T mapped = rowMapper.mapRow(queryRow);
                     results.add(mapped);

@@ -2,6 +2,9 @@ package com.thecookiezen.ladybugdb.spring.repository.support;
 
 import com.thecookiezen.ladybugdb.spring.annotation.RelationshipEntity;
 
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
+
 /**
  * Metadata about a relationship entity type, including type name
  * and source/target references.
@@ -16,6 +19,8 @@ public class RelationshipMetadata<R> {
     private final Class<?> targetType;
     private final String sourceFieldName;
     private final String targetFieldName;
+    private final Field idField;
+    private final String idPropertyName;
 
     public RelationshipMetadata(Class<R> relationshipType) {
         this.relationshipType = relationshipType;
@@ -30,6 +35,21 @@ public class RelationshipMetadata<R> {
         this.targetType = annotation.nodeType();
         this.sourceFieldName = annotation.sourceField();
         this.targetFieldName = annotation.targetField();
+        this.idField = findIdField(relationshipType);
+        this.idPropertyName = idField != null ? idField.getName() : "id";
+    }
+
+    private Field findIdField(Class<R> relationshipType) {
+        for (Field field : relationshipType.getDeclaredFields()) {
+            for (Annotation ann : field.getAnnotations()) {
+                String annotationName = ann.annotationType().getSimpleName();
+                if ("Id".equals(annotationName)) {
+                    field.setAccessible(true);
+                    return field;
+                }
+            }
+        }
+        throw new IllegalArgumentException("Relationship entity must have an @Id field");
     }
 
     private String determineTypeName(Class<R> relationshipType) {
@@ -69,5 +89,21 @@ public class RelationshipMetadata<R> {
 
     public String getTargetFieldName() {
         return targetFieldName;
+    }
+
+    public String getIdPropertyName() {
+        return idPropertyName;
+    }
+
+    @SuppressWarnings("unchecked")
+    public <ID> ID getId(R entity) {
+        if (idField == null) {
+            return null;
+        }
+        try {
+            return (ID) idField.get(entity);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException("Failed to access ID field", e);
+        }
     }
 }

@@ -38,7 +38,7 @@ class SimpleNodeRepositoryTest {
 
         try (Connection conn = new Connection(db)) {
             conn.query("CREATE NODE TABLE Person(name STRING PRIMARY KEY, age INT64)");
-            conn.query("CREATE REL TABLE FOLLOWS(FROM Person TO Person)");
+            conn.query("CREATE REL TABLE FOLLOWS(FROM Person TO Person, name STRING, since INT64)");
         }
 
         repository = new SimpleNodeRepository<>(template, Person.class, Follows.class,
@@ -210,14 +210,35 @@ class SimpleNodeRepositoryTest {
         repository.save(alice);
         repository.save(bob);
 
-        Follows follows = new Follows(alice, bob);
+        Follows follows = new Follows("alice_bob", alice, bob, 2020);
         Follows created = repository.createRelation(alice, bob, follows);
-
-        System.out.println(created);
 
         assertNotNull(created);
         assertEquals("Alice", created.from.name);
         assertEquals("Bob", created.to.name);
+    }
+
+    @Test
+    void create_shouldUpdateRelationship() {
+        Person alice = new Person("Alice", 1);
+        Person bob = new Person("Bob", 2);
+        repository.save(alice);
+        repository.save(bob);
+
+        Follows follows = new Follows("alice_bob", alice, bob, 2020);
+        Follows created = repository.createRelation(alice, bob, follows);
+
+        created.since = 2021;
+        repository.createRelation(alice, bob, created);
+
+        Optional<Follows> found = repository.findRelationById(created.name);
+        List<Follows> all = repository.findAllRelations();
+
+        assertTrue(found.isPresent());
+        assertEquals(1, all.size());
+        assertEquals("Alice", found.get().from.name);
+        assertEquals("Bob", found.get().to.name);
+        assertEquals(2021, found.get().since);
     }
 
     @Test
@@ -227,12 +248,12 @@ class SimpleNodeRepositoryTest {
         repository.save(alice);
         repository.save(bob);
 
-        repository.createRelation(alice, bob, new Follows(alice, bob));
+        repository.createRelation(alice, bob, new Follows("alice_bob", alice, bob, 2020));
 
-        // Optional<Follows> found = repository.findById(id); ????
-        // assertTrue(found.isPresent());
-        // assertEquals("Alice", found.get().from.name);
-        // assertEquals("Bob", found.get().to.name);
+        List<Follows> found = repository.findRelationsBySource(alice);
+        assertEquals(1, found.size());
+        assertEquals("Alice", found.get(0).from.name);
+        assertEquals("Bob", found.get(0).to.name);
     }
 
     @Test
@@ -244,8 +265,8 @@ class SimpleNodeRepositoryTest {
         repository.save(bob);
         repository.save(charlie);
 
-        repository.createRelation(alice, bob, new Follows(alice, bob));
-        repository.createRelation(alice, charlie, new Follows(alice, charlie));
+        repository.createRelation(alice, bob, new Follows("alice_bob", alice, bob, 2020));
+        repository.createRelation(alice, charlie, new Follows("alice_charlie", alice, charlie, 2020));
 
         List<Follows> results = repository.findRelationsBySource(alice);
         assertEquals(2, results.size());
@@ -258,22 +279,40 @@ class SimpleNodeRepositoryTest {
         repository.save(alice);
         repository.save(bob);
 
-        repository.createRelation(alice, bob, new Follows(alice, bob));
+        repository.createRelation(alice, bob, new Follows("alice_bob", alice, bob, 2020));
 
         List<Follows> results = repository.findAllRelations();
         assertEquals(1, results.size());
     }
 
     @Test
-    void deleteById_shouldDelete() {
+    void deleteByRelation_shouldDelete() {
+        Person alice = new Person("Alice", 1);
+        Person bob = new Person("Bob", 2);
+        Person charlie = new Person("Charlie", 3);
+        repository.save(alice);
+        repository.save(bob);
+        repository.save(charlie);
+
+        var rel1 = repository.createRelation(alice, bob, new Follows("alice_bob", alice, bob, 2020));
+        repository.createRelation(alice, charlie, new Follows("alice_charlie", alice, charlie, 2020));
+
+        repository.deleteRelation(rel1);
+
+        List<Follows> results = repository.findAllRelations();
+        assertEquals(1, results.size());
+    }
+
+    @Test
+    void deleteById_shouldDeleteBySource() {
         Person alice = new Person("Alice", 1);
         Person bob = new Person("Bob", 2);
         repository.save(alice);
         repository.save(bob);
 
-        repository.createRelation(alice, bob, new Follows(alice, bob));
+        repository.createRelation(alice, bob, new Follows("alice_bob", alice, bob, 2020));
 
-        // repository.deleteById(id); ??
+        repository.deleteRelationBySource(alice);
 
         List<Follows> results = repository.findAllRelations();
         assertTrue(results.isEmpty());
@@ -312,16 +351,24 @@ class SimpleNodeRepositoryTest {
 
     @RelationshipEntity(type = "FOLLOWS", nodeType = Person.class, sourceField = "from", targetField = "to")
     static class Follows {
+
+        @Id
+        String name;
+
         Person from;
 
         Person to;
 
+        int since;
+
         Follows() {
         }
 
-        Follows(Person from, Person to) {
+        Follows(String name, Person from, Person to, int since) {
+            this.name = name;
             this.from = from;
             this.to = to;
+            this.since = since;
         }
 
         @Override
@@ -330,15 +377,18 @@ class SimpleNodeRepositoryTest {
         }
     }
 
-    static EntityWriter<Follows> followsWriter = (entity) -> Map.of();
+    static EntityWriter<Follows> followsWriter = (entity) -> Map.of("name", entity.name, "since", entity.since);
 
     static RowMapper<Follows> followsReader = (row) -> {
+        var rel = row.getRelationship("rel");
+        String name = ValueMappers.asString(rel.properties().get("name"));
+        int since = ValueMappers.asInteger(rel.properties().get("since"));
         var s = row.getNode("s");
         var t = row.getNode("t");
         String sourceName = ValueMappers.asString(s.get("name"));
         int sourceAge = ValueMappers.asInteger(s.get("age"));
         String targetName = ValueMappers.asString(t.get("name"));
         int targetAge = ValueMappers.asInteger(t.get("age"));
-        return new Follows(new Person(sourceName, sourceAge), new Person(targetName, targetAge));
+        return new Follows(name, new Person(sourceName, sourceAge), new Person(targetName, targetAge), since);
     };
 }

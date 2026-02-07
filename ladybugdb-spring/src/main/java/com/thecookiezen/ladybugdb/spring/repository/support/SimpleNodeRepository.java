@@ -5,11 +5,8 @@ import com.thecookiezen.ladybugdb.spring.mapper.ValueMappers;
 import com.thecookiezen.ladybugdb.spring.repository.NodeRepository;
 
 import org.neo4j.cypherdsl.core.Cypher;
-import org.neo4j.cypherdsl.core.ExposesMerge;
-import org.neo4j.cypherdsl.core.Expression;
 import org.neo4j.cypherdsl.core.Node;
 import org.neo4j.cypherdsl.core.Statement;
-import org.neo4j.cypherdsl.core.StatementBuilder.OngoingMerge;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -179,6 +176,24 @@ public class SimpleNodeRepository<T, R, ID> implements NodeRepository<T, ID, R, 
         }
 
         @Override
+        public Optional<R> findRelationById(ID id) {
+                logger.debug("Finding relationship by ID: {}", id);
+
+                Node s = Cypher.node(metadata.getNodeLabel()).named("s");
+
+                Node t = Cypher.node(metadata.getNodeLabel()).named("t");
+
+                var rel = s.relationshipTo(t, relationshipMetadata.getRelationshipTypeName()).named("rel")
+                                .withProperties(relationshipMetadata.getIdPropertyName(), Cypher.literalOf(id));
+
+                Statement statement = Cypher.match(rel)
+                                .returning(s, t, rel)
+                                .build();
+
+                return template.queryForObject(statement, relationshipDescriptor.reader());
+        }
+
+        @Override
         public R createRelation(T source, T target, R relationship) {
                 logger.debug("Creating relationship: {} -> {}", source, target);
 
@@ -188,7 +203,7 @@ public class SimpleNodeRepository<T, R, ID> implements NodeRepository<T, ID, R, 
                 Node t = Cypher.node(metadata.getNodeLabel()).named("t")
                                 .withProperties(metadata.getIdPropertyName(), Cypher.literalOf(metadata.getId(target)));
 
-                var rel = s.relationshipTo(t, relationshipMetadata.getRelationshipTypeName()).named("r");
+                var rel = s.relationshipTo(t, relationshipMetadata.getRelationshipTypeName()).named("rel");
 
                 var setOperations = relationshipDescriptor.writer().decompose(relationship).entrySet().stream()
                                 .filter(e -> !e.getKey().equals(relationshipMetadata.getSourceFieldName())
@@ -205,6 +220,8 @@ public class SimpleNodeRepository<T, R, ID> implements NodeRepository<T, ID, R, 
                         statement = matchMerge.returning(s, t, rel).build();
                 }
 
+                logger.info("Statement: {}", statement);
+
                 return template.queryForObject(statement, relationshipDescriptor.reader())
                                 .orElseThrow(() -> new RuntimeException(
                                                 "Failed to create relationship: " + relationship));
@@ -213,29 +230,73 @@ public class SimpleNodeRepository<T, R, ID> implements NodeRepository<T, ID, R, 
         @Override
         public List<R> findRelationsBySource(T source) {
                 logger.debug("Finding relationships by source: {}", source);
-                throw new UnsupportedOperationException(
-                                "Generic findBySource not implemented. Override this method or use a concrete repository.");
+
+                Node s = Cypher.node(metadata.getNodeLabel()).named("s")
+                                .withProperties(metadata.getIdPropertyName(), Cypher.literalOf(metadata.getId(source)));
+
+                Node t = Cypher.node(metadata.getNodeLabel()).named("t");
+
+                var rel = s.relationshipTo(t, relationshipMetadata.getRelationshipTypeName()).named("rel");
+
+                Statement statement = Cypher.match(rel)
+                                .returning(s, t, rel)
+                                .build();
+
+                return template.query(statement, relationshipDescriptor.reader());
         }
 
         @Override
         public List<R> findAllRelations() {
                 logger.debug("Finding all relationships of type: {}", relationshipMetadata.getRelationshipTypeName());
-                throw new UnsupportedOperationException(
-                                "Generic findAll not implemented. Override this method or use a concrete repository.");
+
+                Node s = Cypher.node(metadata.getNodeLabel()).named("s");
+
+                Node t = Cypher.node(metadata.getNodeLabel()).named("t");
+
+                var rel = s.relationshipTo(t, relationshipMetadata.getRelationshipTypeName()).named("rel");
+
+                Statement statement = Cypher.match(rel)
+                                .returning(s, t, rel)
+                                .build();
+
+                return template.query(statement, relationshipDescriptor.reader());
         }
 
         @Override
         public void deleteRelation(R relationship) {
                 logger.debug("Deleting relationship: {}", relationship);
-                throw new UnsupportedOperationException(
-                                "Generic delete not implemented. Override this method or use a concrete repository.");
+
+                Node s = Cypher.node(metadata.getNodeLabel()).named("s");
+
+                Node t = Cypher.node(metadata.getNodeLabel()).named("t");
+
+                var rel = s.relationshipTo(t, relationshipMetadata.getRelationshipTypeName()).named("rel")
+                                .withProperties(relationshipMetadata.getIdPropertyName(),
+                                                Cypher.literalOf(relationshipMetadata.getId(relationship)));
+
+                Statement statement = Cypher.match(rel)
+                                .delete(rel)
+                                .build();
+
+                template.execute(statement);
         }
 
         @Override
-        public void deleteRelationById(ID id) {
-                logger.debug("Deleting relationship by ID: {}", id);
-                throw new UnsupportedOperationException(
-                                "Generic deleteById not implemented. Override this method or use a concrete repository.");
+        public void deleteRelationBySource(T source) {
+                logger.debug("Deleting relationship by source: {}", source);
+
+                Node s = Cypher.node(metadata.getNodeLabel()).named("s")
+                                .withProperties(metadata.getIdPropertyName(), Cypher.literalOf(metadata.getId(source)));
+
+                Node t = Cypher.node(metadata.getNodeLabel()).named("t");
+
+                var rel = s.relationshipTo(t, relationshipMetadata.getRelationshipTypeName()).named("rel");
+
+                Statement statement = Cypher.match(rel)
+                                .delete(rel)
+                                .build();
+
+                template.execute(statement);
         }
 
         protected LadybugDBTemplate getTemplate() {

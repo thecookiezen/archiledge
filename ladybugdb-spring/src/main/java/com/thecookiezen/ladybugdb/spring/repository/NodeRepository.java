@@ -1,6 +1,7 @@
 package com.thecookiezen.ladybugdb.spring.repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.NoRepositoryBean;
@@ -43,7 +44,12 @@ public interface NodeRepository<T, ID, R, S> extends CrudRepository<T, ID> {
     void deleteRelation(R relationship);
 
     /**
-     * Deletes a relationship by its internal edge ID.
+     * Deletes all relationships originating from the given source node.
      */
-    void deleteRelationById(ID id);
+    void deleteRelationBySource(T source);
+
+    /**
+     * Finds a relationship by its internal ID.
+     */
+    Optional<R> findRelationById(ID id);
 }
