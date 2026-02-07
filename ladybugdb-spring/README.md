@@ -36,18 +36,38 @@ template.execute("CREATE (p:Person {name: 'Alice', age: 30})");
 // Query with mapping
 List<Person> people = template.query(
     "MATCH (p:Person) RETURN p.name, p.age",
-    (row, rowNum) -> new Person(
-        ValueMappers.asString(row.getValue(0)),
-        ValueMappers.asInteger(row.getValue(1))
+    (row) -> new Person(
+        ValueMappers.asString(row.get("name")),
+        ValueMappers.asInteger(row.get("age"))
     )
 );
 ```
 
 ### Use the Repository
 
+The repository requires `RowMapper` and `EntityWriter` to handle entity conversion.
+
 ```java
-SimpleNodeRepository<Person, String> repository = new SimpleNodeRepository<>(
-    template, Person.class, entityDescriptor
+// Define mappers
+RowMapper<Person> reader = (row) -> new Person(
+    ValueMappers.asString(row.get("name")), 
+    ValueMappers.asInteger(row.get("age"))
+);
+
+EntityWriter<Person> writer = (entity) -> Map.of(
+    "age", entity.getAge() // ID (name) is handled automatically
+);
+
+// Create descriptors
+EntityDescriptor<Person> personDescriptor = new EntityDescriptor<>(Person.class, reader, writer);
+// define relationship descriptor similarly if needed, or pass null if not using relationships
+
+SimpleNodeRepository<Person, Void, String> repository = new SimpleNodeRepository<>(
+    template, 
+    Person.class, 
+    Void.class, 
+    personDescriptor, 
+    null // relationship descriptor
 );
 
 // CRUD operations
