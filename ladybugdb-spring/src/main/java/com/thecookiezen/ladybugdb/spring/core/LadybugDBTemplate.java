@@ -1,7 +1,11 @@
 package com.thecookiezen.ladybugdb.spring.core;
 
 import com.ladybugdb.Connection;
+import com.ladybugdb.DataTypeID;
+import com.ladybugdb.LbugStruct;
 import com.ladybugdb.QueryResult;
+import com.ladybugdb.Value;
+import com.ladybugdb.ValueRelUtil;
 import com.thecookiezen.ladybugdb.spring.mapper.RowMapper;
 import com.thecookiezen.ladybugdb.spring.connection.LadybugDBConnectionFactory;
 import org.neo4j.cypherdsl.core.Statement;
@@ -10,7 +14,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -105,11 +111,27 @@ public class LadybugDBTemplate {
 
             while (result.hasNext()) {
                 var row = result.getNext();
-                try {
-                    T mapped = rowMapper.mapRow(row, rowNum++);
-                    results.add(mapped);
-                } catch (Exception e) {
-                    throw new CypherMappingException("Error mapping row " + (rowNum - 1), e);
+
+                logger.info("Query result row {}: {}", rowNum, row);
+
+                if (row.getValue(0).getDataType().getID() == DataTypeID.NODE) {
+                    try (LbugStruct node = new LbugStruct(row.getValue(0))) {
+                        T mapped = rowMapper.mapRow(node.toMap());
+                        results.add(mapped);
+                    } catch (Exception e) {
+                        throw new CypherMappingException("Error mapping row " + (rowNum - 1), e);
+                    }
+                } else {
+                    try {
+                        Map<String, Value> map = new HashMap<>();
+                        for (int i = 0; i < result.getNumColumns(); i++) {
+                            map.put(result.getColumnName(i), row.getValue(i));
+                        }
+                        T mapped = rowMapper.mapRow(map);
+                        results.add(mapped);
+                    } catch (Exception e) {
+                        throw new CypherMappingException("Error mapping row " + (rowNum - 1), e);
+                    }
                 }
             }
 
@@ -152,23 +174,23 @@ public class LadybugDBTemplate {
     /**
      * Execute a Cypher query and return a list of strings.
      *
-     * @param statement   the Cypher DSL statement
-     * @param columnIndex the column index to extract (0-indexed)
+     * @param statement  the Cypher DSL statement
+     * @param columnName the column name to extract
      * @return list of string values
      */
-    public List<String> queryForStringList(Statement statement, int columnIndex) {
-        return queryForStringList(statement.getCypher(), columnIndex);
+    public List<String> queryForStringList(Statement statement, String columnName) {
+        return queryForStringList(statement.getCypher(), columnName);
     }
 
     /**
      * Execute a raw Cypher query and return a list of strings.
      *
-     * @param cypher      the Cypher query string
-     * @param columnIndex the column index to extract (0-indexed)
+     * @param cypher     the Cypher query string
+     * @param columnName the column name to extract
      * @return list of string values
      */
-    public List<String> queryForStringList(String cypher, int columnIndex) {
-        return query(cypher, (row, rowNum) -> row.getValue(columnIndex).getValue().toString());
+    public List<String> queryForStringList(String cypher, String columnName) {
+        return query(cypher, (row) -> row.get(columnName).getValue().toString());
     }
 
     public LadybugDBConnectionFactory getConnectionFactory() {

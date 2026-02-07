@@ -2,7 +2,7 @@ package com.thecookiezen.ladybugdb.spring.repository.support;
 
 import com.thecookiezen.ladybugdb.spring.core.LadybugDBTemplate;
 import com.thecookiezen.ladybugdb.spring.repository.NodeRepository;
-import com.thecookiezen.ladybugdb.spring.repository.RelationshipRepository;
+import org.springframework.core.ResolvableType;
 import org.springframework.data.repository.core.EntityInformation;
 import org.springframework.data.repository.core.RepositoryInformation;
 import org.springframework.data.repository.core.RepositoryMetadata;
@@ -32,33 +32,23 @@ public class LadybugDBRepositoryFactory extends RepositoryFactorySupport {
     @Override
     protected Object getTargetRepository(RepositoryInformation metadata) {
         Class<?> repositoryInterface = metadata.getRepositoryInterface();
+        ResolvableType resolvableType = ResolvableType.forClass(repositoryInterface).as(NodeRepository.class);
 
         Class<?> domainType = metadata.getDomainType();
+        Class<?> relationshipType = resolvableType.getGeneric(2).resolve();
 
         EntityDescriptor<?> descriptor = entityRegistry.getDescriptor(domainType);
+        EntityDescriptor<?> relationshipDescriptor = entityRegistry.getDescriptor(relationshipType);
 
-        if (RelationshipRepository.class.isAssignableFrom(repositoryInterface)) {
-            // For relationships, we need source and target types from generics
-            // This is a simplified implementation
-            return new SimpleRelationshipRepository<>(
-                    template,
-                    metadata.getDomainType(),
-                    // entityRegistry.getDescriptor(metadata.getDomainType()),
-                    Object.class,
-                    Object.class);
-        }
-
-        return new SimpleNodeRepository<>(template, (Class<Object>) domainType, (EntityDescriptor<Object>) descriptor);
+        return new SimpleNodeRepository<>(template,
+                (Class<Object>) domainType,
+                (Class<Object>) relationshipType,
+                (EntityDescriptor<Object>) descriptor,
+                (EntityDescriptor<Object>) relationshipDescriptor);
     }
 
     @Override
     protected Class<?> getRepositoryBaseClass(RepositoryMetadata metadata) {
-        Class<?> repositoryInterface = metadata.getRepositoryInterface();
-
-        if (RelationshipRepository.class.isAssignableFrom(repositoryInterface)) {
-            return SimpleRelationshipRepository.class;
-        }
-
         return SimpleNodeRepository.class;
     }
 }

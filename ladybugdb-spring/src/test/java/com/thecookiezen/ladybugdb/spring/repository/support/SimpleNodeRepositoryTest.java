@@ -2,7 +2,10 @@ package com.thecookiezen.ladybugdb.spring.repository.support;
 
 import com.ladybugdb.Connection;
 import com.ladybugdb.Database;
+import com.thecookiezen.ladybugdb.spring.annotation.Destination;
 import com.thecookiezen.ladybugdb.spring.annotation.NodeEntity;
+import com.thecookiezen.ladybugdb.spring.annotation.RelationshipEntity;
+import com.thecookiezen.ladybugdb.spring.annotation.Source;
 import com.thecookiezen.ladybugdb.spring.connection.SimpleConnectionFactory;
 import com.thecookiezen.ladybugdb.spring.core.LadybugDBTemplate;
 import com.thecookiezen.ladybugdb.spring.mapper.EntityWriter;
@@ -27,7 +30,7 @@ class SimpleNodeRepositoryTest {
     private static Database db;
     private static SimpleConnectionFactory connectionFactory;
     private static LadybugDBTemplate template;
-    private static SimpleNodeRepository<Person, String> repository;
+    private static SimpleNodeRepository<Person, Follows, String> repository;
 
     @BeforeAll
     static void setupAll() {
@@ -37,15 +40,17 @@ class SimpleNodeRepositoryTest {
 
         try (Connection conn = new Connection(db)) {
             conn.query("CREATE NODE TABLE Person(name STRING PRIMARY KEY, age INT64)");
+            conn.query("CREATE REL TABLE FOLLOWS(FROM Person TO Person)");
         }
 
-        repository = new SimpleNodeRepository<>(template, Person.class,
-                new EntityDescriptor<>(Person.class, personReader, personWriter));
+        repository = new SimpleNodeRepository<>(template, Person.class, Follows.class,
+                new EntityDescriptor<>(Person.class, personReader, personWriter),
+                new EntityDescriptor<>(Follows.class, followsReader, followsWriter));
     }
 
     @AfterEach
     void tearDown() {
-        template.execute("MATCH (n:Person) DELETE n");
+        template.execute("MATCH (n:Person) DETACH DELETE n");
     }
 
     @AfterAll
@@ -200,6 +205,80 @@ class SimpleNodeRepositoryTest {
         assertEquals(2, found.size());
     }
 
+    @Test
+    void create_shouldCreateRelationship() {
+        Person alice = new Person("Alice", 1);
+        Person bob = new Person("Bob", 2);
+        repository.save(alice);
+        repository.save(bob);
+
+        Follows follows = new Follows(alice, bob);
+        Follows created = repository.createRelation(alice, bob, follows);
+
+        assertNotNull(created);
+        assertEquals("Alice", created.from.name);
+        assertEquals("Bob", created.to.name);
+    }
+
+    @Test
+    void findById_shouldFindRelationship() {
+        Person alice = new Person("Alice", 1);
+        Person bob = new Person("Bob", 2);
+        repository.save(alice);
+        repository.save(bob);
+
+        repository.createRelation(alice, bob, new Follows(alice, bob));
+
+        // Optional<Follows> found = repository.findById(id); ????
+        // assertTrue(found.isPresent());
+        // assertEquals("Alice", found.get().from.name);
+        // assertEquals("Bob", found.get().to.name);
+    }
+
+    @Test
+    void findBySource_shouldFindRelationships() {
+        Person alice = new Person("Alice", 1);
+        Person bob = new Person("Bob", 2);
+        Person charlie = new Person("Charlie", 3);
+        repository.save(alice);
+        repository.save(bob);
+        repository.save(charlie);
+
+        repository.createRelation(alice, bob, new Follows(alice, bob));
+        repository.createRelation(alice, charlie, new Follows(alice, charlie));
+
+        List<Follows> results = repository.findRelationsBySource(alice);
+        assertEquals(2, results.size());
+    }
+
+    @Test
+    void findAll_shouldReturnAll() {
+        Person alice = new Person("Alice", 1);
+        Person bob = new Person("Bob", 2);
+        repository.save(alice);
+        repository.save(bob);
+
+        repository.createRelation(alice, bob, new Follows(alice, bob));
+
+        List<Follows> results = repository.findAllRelations();
+        assertEquals(1, results.size());
+    }
+
+    @Test
+    void deleteById_shouldDelete() {
+        Person alice = new Person("Alice", 1);
+        Person bob = new Person("Bob", 2);
+        repository.save(alice);
+        repository.save(bob);
+
+        repository.createRelation(alice, bob, new Follows(alice, bob));
+
+        // repository.deleteById(id); ??
+
+        List<Follows> results = repository.findAllRelations();
+        assertTrue(results.isEmpty());
+    }
+
     @NodeEntity(label = "Person")
     static class Person {
         @Id
@@ -215,13 +294,39 @@ class SimpleNodeRepositoryTest {
         }
     }
 
-    static RowMapper<Person> personReader = (row, meta) -> {
-        String name = ValueMappers.asString(row.getValue(0));
-        int age = ValueMappers.asInteger(row.getValue(1));
+    static RowMapper<Person> personReader = (row) -> {
+        String name = ValueMappers.asString(row.get("name"));
+        int age = ValueMappers.asInteger(row.get("age"));
         return new Person(name, age);
     };
 
     static EntityWriter<Person> personWriter = (entity) -> {
         return Map.of("age", entity.age);
+    };
+
+    @RelationshipEntity(type = "FOLLOWS")
+    static class Follows {
+        @Source
+        Person from;
+
+        @Destination
+        Person to;
+
+        Follows() {
+        }
+
+        Follows(Person from, Person to) {
+            this.from = from;
+            this.to = to;
+        }
+    }
+
+    static EntityWriter<Follows> followsWriter = (entity) -> Map.of();
+
+    static RowMapper<Follows> followsReader = (row) -> {
+        // Source and target are returned as IDs (String name) in the query
+        String sourceName = ValueMappers.asString(row.get("from"));
+        String targetName = ValueMappers.asString(row.get("to"));
+        return new Follows(new Person(sourceName, 1), new Person(targetName, 2));
     };
 }

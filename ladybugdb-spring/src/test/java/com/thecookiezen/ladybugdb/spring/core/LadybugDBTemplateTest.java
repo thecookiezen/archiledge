@@ -54,7 +54,7 @@ class LadybugDBTemplateTest {
     void execute_shouldRunWriteQuery() {
         template.execute("CREATE (p:Person {name: 'Alice', age: 30})");
 
-        List<String> names = template.queryForStringList("MATCH (p:Person) RETURN p.name", 0);
+        List<String> names = template.queryForStringList("MATCH (p:Person) RETURN p", "name");
         assertEquals(1, names.size());
         assertEquals("Alice", names.get(0));
     }
@@ -65,10 +65,10 @@ class LadybugDBTemplateTest {
         template.execute("CREATE (p:Person {name: 'Charlie', age: 35})");
 
         List<PersonRecord> people = template.query(
-                "MATCH (p:Person) RETURN p.name, p.age ORDER BY p.name",
-                (row, rowNum) -> new PersonRecord(
-                        row.getValue(0).getValue().toString(),
-                        Integer.parseInt(row.getValue(1).getValue().toString())));
+                "MATCH (p:Person) RETURN p ORDER BY p.name",
+                (row) -> new PersonRecord(
+                        row.get("name").getValue().toString(),
+                        Integer.parseInt(row.get("age").getValue().toString())));
 
         assertEquals(2, people.size());
         assertEquals("Bob", people.get(0).name());
@@ -82,10 +82,10 @@ class LadybugDBTemplateTest {
         template.execute("CREATE (p:Person {name: 'David', age: 40})");
 
         Optional<PersonRecord> result = template.queryForObject(
-                "MATCH (p:Person) WHERE p.name = 'David' RETURN p.name, p.age",
-                (row, rowNum) -> new PersonRecord(
-                        row.getValue(0).getValue().toString(),
-                        Integer.parseInt(row.getValue(1).getValue().toString())));
+                "MATCH (p:Person) WHERE p.name = 'David' RETURN p",
+                (row) -> new PersonRecord(
+                        row.get("name").getValue().toString(),
+                        Integer.parseInt(row.get("age").getValue().toString())));
 
         assertTrue(result.isPresent());
         assertEquals("David", result.get().name());
@@ -95,10 +95,10 @@ class LadybugDBTemplateTest {
     @Test
     void queryForObject_shouldReturnEmptyWhenNoResults() {
         Optional<PersonRecord> result = template.queryForObject(
-                "MATCH (p:Person) WHERE p.name = 'NonExistent' RETURN p.name, p.age",
-                (row, rowNum) -> new PersonRecord(
-                        row.getValue(0).getValue().toString(),
-                        Integer.parseInt(row.getValue(1).getValue().toString())));
+                "MATCH (p:Person) WHERE p.name = 'NonExistent' RETURN p",
+                (row) -> new PersonRecord(
+                        row.get("name").getValue().toString(),
+                        Integer.parseInt(row.get("age").getValue().toString())));
 
         assertTrue(result.isEmpty());
     }
@@ -109,7 +109,7 @@ class LadybugDBTemplateTest {
         template.execute("CREATE (p:Person {name: 'Frank', age: 33})");
 
         List<String> names = template.queryForStringList(
-                "MATCH (p:Person) RETURN p.name ORDER BY p.name", 0);
+                "MATCH (p:Person) RETURN p ORDER BY p.name", "name");
 
         assertEquals(2, names.size());
         assertEquals("Eve", names.get(0));
@@ -122,11 +122,11 @@ class LadybugDBTemplateTest {
         template.execute("CREATE (p:Person {name: 'G2', age: 2})");
         template.execute("CREATE (p:Person {name: 'G3', age: 3})");
 
-        List<Integer> rowNumbers = template.query(
-                "MATCH (p:Person) RETURN p.name ORDER BY p.name",
-                (row, rowNum) -> rowNum);
+        List<String> rowNumbers = template.query(
+                "MATCH (p:Person) RETURN p ORDER BY p.name",
+                (row) -> row.get("name").getValue().toString());
 
-        assertEquals(List.of(0, 1, 2), rowNumbers);
+        assertEquals(List.of("G1", "G2", "G3"), rowNumbers);
     }
 
     record PersonRecord(String name, int age) {
