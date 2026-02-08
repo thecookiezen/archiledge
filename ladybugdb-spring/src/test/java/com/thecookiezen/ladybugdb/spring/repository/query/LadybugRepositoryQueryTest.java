@@ -47,11 +47,16 @@ class LadybugRepositoryQueryTest {
         }
     }
 
-    @BeforeEach
-    void setup() {
+    private EntityRegistry createEntityRegistry() {
         EntityRegistry registry = new EntityRegistry();
         registry.registerDescriptor(Person.class, personReader, personWriter);
         registry.registerDescriptor(Follows.class, followsReader, followsWriter);
+        return registry;
+    }
+
+    @BeforeEach
+    void setup() {
+        EntityRegistry registry = createEntityRegistry();
 
         LadybugDBRepositoryFactory factory = new LadybugDBRepositoryFactory(template, registry);
         repository = factory.getRepository(TestRepository.class);
@@ -125,6 +130,9 @@ class LadybugRepositoryQueryTest {
 
     @Test
     void testQueryNullParameter() {
+        // Insert a person to ensure that a null parameter does not accidentally match existing data
+        template.execute("CREATE (p:Person {name: $name, age: $age})", Map.of("name", "NullTest", "age", 20));
+
         Person p = repository.findByName(null);
         assertNull(p);
     }
@@ -186,7 +194,7 @@ class LadybugRepositoryQueryTest {
         }
     }
 
-    static RowMapper<Person> personReader = (row) -> {
+    static RowMapper<Person> personRowMapper = (row) -> {
         var p = row.getNode("n");
         String name = ValueMappers.asString(p.get("name"));
         int age = ValueMappers.asInteger(p.get("age"));
@@ -209,6 +217,9 @@ class LadybugRepositoryQueryTest {
         }
     }
 
-    static EntityWriter<Follows> followsWriter = (entity) -> Map.of();
+    static EntityWriter<Follows> followsWriter = (entity) -> Map.of(
+            "name", entity.name,
+            "since", entity.since
+    );
     static RowMapper<Follows> followsReader = (row) -> new Follows();
 }
