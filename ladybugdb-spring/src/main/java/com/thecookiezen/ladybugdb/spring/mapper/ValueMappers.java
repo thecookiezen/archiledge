@@ -9,8 +9,7 @@ import java.util.function.Function;
 
 /**
  * Utility class for mapping LadybugDB Value objects to Java types.
- * Provides static methods for common type conversions to eliminate duplication
- * in RowMappers.
+ * Optimized to use direct Native-to-Java conversion via Value.getValue().
  */
 public final class ValueMappers {
 
@@ -28,7 +27,7 @@ public final class ValueMappers {
         if (value == null || value.isNull()) {
             return null;
         }
-        return value.getValue().toString();
+        return value.getValue();
     }
 
     /**
@@ -41,14 +40,11 @@ public final class ValueMappers {
         if (value == null || value.isNull()) {
             return null;
         }
-        Object rawValue = value.getValue();
-        if (rawValue instanceof Integer i) {
-            return i;
-        }
-        if (rawValue instanceof Number n) {
+        Object raw = value.getValue();
+        if (raw instanceof Number n) {
             return n.intValue();
         }
-        return Integer.parseInt(rawValue.toString());
+        return Integer.parseInt(raw.toString());
     }
 
     /**
@@ -61,14 +57,11 @@ public final class ValueMappers {
         if (value == null || value.isNull()) {
             return null;
         }
-        Object rawValue = value.getValue();
-        if (rawValue instanceof Long l) {
-            return l;
-        }
-        if (rawValue instanceof Number n) {
+        Object raw = value.getValue();
+        if (raw instanceof Number n) {
             return n.longValue();
         }
-        return Long.parseLong(rawValue.toString());
+        return Long.parseLong(raw.toString());
     }
 
     /**
@@ -81,14 +74,11 @@ public final class ValueMappers {
         if (value == null || value.isNull()) {
             return null;
         }
-        Object rawValue = value.getValue();
-        if (rawValue instanceof Double d) {
-            return d;
-        }
-        if (rawValue instanceof Number n) {
+        Object raw = value.getValue();
+        if (raw instanceof Number n) {
             return n.doubleValue();
         }
-        return Double.parseDouble(rawValue.toString());
+        return Double.parseDouble(raw.toString());
     }
 
     /**
@@ -101,23 +91,14 @@ public final class ValueMappers {
         if (value == null || value.isNull()) {
             return null;
         }
-        Object rawValue = value.getValue();
-        if (rawValue instanceof Boolean b) {
-            return b;
-        }
-        return Boolean.parseBoolean(rawValue.toString());
+        return value.getValue();
     }
 
     /**
      * Maps a Value containing a list to a List of the specified type.
-     *
-     * @param value         the LadybugDB Value containing a list
-     * @param elementMapper function to convert each element's string value to the
-     *                      target type
-     * @param <T>           the type of elements in the resulting list
-     * @return the list of mapped elements, or empty list if null
+     * Bypasses string conversion where possible.
      */
-    public static <T> List<T> asList(Value value, Function<String, T> elementMapper) {
+    public static <T> List<T> asList(Value value, Function<Value, T> elementMapper) {
         if (value == null || value.isNull()) {
             return List.of();
         }
@@ -128,7 +109,7 @@ public final class ValueMappers {
 
             for (long i = 0; i < size; i++) {
                 try (Value element = lbugList.getListElement(i)) {
-                    result.add(elementMapper.apply(element.getValue().toString()));
+                    result.add(elementMapper.apply(element));
                 }
             }
 
@@ -137,18 +118,22 @@ public final class ValueMappers {
     }
 
     public static List<String> asStringList(Value value) {
-        return asList(value, Function.identity());
+        return asList(value, Value::getValue);
     }
 
     public static List<Integer> asIntegerList(Value value) {
-        return asList(value, Integer::parseInt);
+        return asList(value, ValueMappers::asInteger);
     }
 
     public static List<Long> asLongList(Value value) {
-        return asList(value, Long::parseLong);
+        return asList(value, ValueMappers::asLong);
     }
 
     public static List<Double> asDoubleList(Value value) {
-        return asList(value, Double::parseDouble);
+        return asList(value, ValueMappers::asDouble);
+    }
+
+    public static List<Boolean> asBooleanList(Value value) {
+        return asList(value, ValueMappers::asBoolean);
     }
 }

@@ -73,7 +73,8 @@ public class LadybugDBTransactionManager extends AbstractPlatformTransactionMana
             // (BEGIN TRANSACTION/COMMIT/ROLLBACK) is not used because LadybugDB only allows
             // one write transaction at a time, which can cause deadlocks in multi-threaded
             // apps.
-            logger.debug("Started LadybugDB transaction (auto-commit mode)");
+            logger.debug(
+                    "Started LadybugDB transaction in AUTO-COMMIT mode. Atomicity is not guaranteed. Failed operations in this transaction cannot be rolled back.");
         } catch (Exception e) {
             throw new LadybugDBTransactionException("Could not begin transaction", e);
         }

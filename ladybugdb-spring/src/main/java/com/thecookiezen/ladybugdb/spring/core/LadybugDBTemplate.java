@@ -13,11 +13,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  * Transaction-aware template for LadybugDB operations.
@@ -78,6 +83,7 @@ public class LadybugDBTemplate {
      * @param parameters the query parameters
      */
     public void execute(String cypher, Map<String, Object> parameters) {
+        validateCypherSafety(cypher, parameters);
         execute(connection -> {
             logger.debug("Executing Cypher: {}", cypher);
             Map<String, Value> valueParameters = convertParameters(parameters);
@@ -100,80 +106,84 @@ public class LadybugDBTemplate {
     /**
      * Execute a Cypher statement and map results using the provided RowMapper.
      *
-     * @param statement the Cypher DSL statement
-     * @param rowMapper the mapper to convert each row
-     * @param <T>       the result type
-     * @return list of mapped results
+     * @param cypher     the Cypher query string
+     * @param parameters the query parameters
+     * @param rowMapper  the mapper to convert each row
+     * @param <T>        the result type
+     * @return stream of mapped results
      */
+    public <T> Stream<T> stream(String cypher, Map<String, Object> parameters, RowMapper<T> rowMapper) {
+        validateCypherSafety(cypher, parameters);
+
+        Connection connection = getConnection();
+        boolean isNewConnection = !isConnectionBoundToTransaction();
+
+        Map<String, Value> valueParameters = convertParameters(parameters);
+        PreparedStatement statement = connection.prepare(cypher);
+        QueryResult result = connection.execute(statement, valueParameters);
+
+        int numColumns = (int) result.getNumColumns();
+        Map<String, Integer> columnToIndex = new HashMap<>(numColumns);
+        for (int i = 0; i < numColumns; i++) {
+            columnToIndex.put(result.getColumnName(i), i);
+        }
+
+        Value[] valuesArray = new Value[numColumns];
+        QueryRow queryRow = new DefaultQueryRow(valuesArray, columnToIndex);
+
+        Iterator<T> iterator = new Iterator<>() {
+            @Override
+            public boolean hasNext() {
+                return result.hasNext();
+            }
+
+            @Override
+            public T next() {
+                var row = result.getNext();
+                try {
+                    for (int i = 0; i < numColumns; i++) {
+                        valuesArray[i] = row.getValue(i);
+                    }
+                    return rowMapper.mapRow(queryRow);
+                } catch (Exception e) {
+                    throw new CypherMappingException("Error mapping row", e);
+                } finally {
+                    for (int i = 0; i < numColumns; i++) {
+                        if (valuesArray[i] != null) {
+                            valuesArray[i].close();
+                            valuesArray[i] = null;
+                        }
+                    }
+                }
+            }
+        };
+
+        return StreamSupport
+                .stream(Spliterators.spliterator(iterator, result.getNumTuples(), Spliterator.ORDERED), false)
+                .onClose(() -> {
+                    try {
+                        result.close();
+                        statement.close();
+                        valueParameters.values().forEach(Value::close);
+                        if (isNewConnection) {
+                            releaseConnection(connection);
+                        }
+                    } catch (Exception e) {
+                        logger.error("Error closing stream resources", e);
+                    }
+                });
+    }
+
+    public <T> List<T> query(String cypher, Map<String, Object> parameters, RowMapper<T> rowMapper) {
+        return stream(cypher, parameters, rowMapper).toList();
+    }
+
     public <T> List<T> query(Statement statement, RowMapper<T> rowMapper) {
         return query(statement.getCypher(), Map.of(), rowMapper);
     }
 
-    /**
-     * Execute a raw Cypher query and map results using the provided RowMapper.
-     *
-     * @param cypher    the Cypher query string
-     * @param rowMapper the mapper to convert each row
-     * @param <T>       the result type
-     * @return list of mapped results
-     */
     public <T> List<T> query(String cypher, RowMapper<T> rowMapper) {
         return query(cypher, Map.of(), rowMapper);
-    }
-
-    /**
-     * Execute a raw Cypher query and map results using the provided RowMapper.
-     *
-     * @param cypher    the Cypher query string
-     * @param rowMapper the mapper to convert each row
-     * @param <T>       the result type
-     * @return list of mapped results
-     */
-    public <T> List<T> query(String cypher, Map<String, Object> parameters, RowMapper<T> rowMapper) {
-        return execute(connection -> {
-            logger.debug("Querying with Cypher: {}", cypher);
-
-            Map<String, Value> valueParameters = convertParameters(parameters);
-            try (PreparedStatement statement = connection.prepare(cypher);
-                    QueryResult result = connection.execute(statement, valueParameters)) {
-                List<T> results = new ArrayList<>();
-                int rowNum = 0;
-
-                int numColumns = (int) result.getNumColumns();
-                Map<String, Integer> columnToIndex = new HashMap<>(numColumns);
-                for (int i = 0; i < numColumns; i++) {
-                    columnToIndex.put(result.getColumnName(i), i);
-                }
-
-                Value[] values = new Value[numColumns];
-                QueryRow queryRow = new DefaultQueryRow(values, columnToIndex);
-
-                while (result.hasNext()) {
-                    var row = result.getNext();
-                    for (int i = 0; i < numColumns; i++) {
-                        values[i] = row.getValue(i);
-                    }
-
-                    try {
-                        T mapped = rowMapper.mapRow(queryRow);
-                        results.add(mapped);
-                    } catch (Exception e) {
-                        throw new CypherMappingException("Error mapping row " + rowNum, e);
-                    }
-                    rowNum++;
-                }
-
-                logger.debug("Query returned {} results", results.size());
-                return results;
-            } finally {
-                valueParameters.values().forEach(v -> {
-                    try {
-                        v.close();
-                    } catch (Exception e) {
-                        /* ignore */ }
-                });
-            }
-        });
     }
 
     public <T> Optional<T> queryForObject(Statement statement, RowMapper<T> rowMapper) {
@@ -193,14 +203,7 @@ public class LadybugDBTemplate {
     }
 
     public <T> Optional<T> queryForObject(String cypher, Map<String, Object> parameters, RowMapper<T> rowMapper) {
-        List<T> results = query(cypher, parameters, rowMapper);
-        if (results.isEmpty()) {
-            return Optional.empty();
-        }
-        if (results.size() > 1) {
-            logger.warn("queryForObject returned {} results, expected 1", results.size());
-        }
-        return Optional.of(results.get(0));
+        return stream(cypher, parameters, rowMapper).findFirst();
     }
 
     /**
@@ -223,6 +226,19 @@ public class LadybugDBTemplate {
      */
     public List<String> queryForStringList(String cypher, String columnName) {
         return query(cypher, (row) -> row.getValue(columnName).getValue().toString());
+    }
+
+    private void validateCypherSafety(String cypher, Map<String, Object> parameters) {
+        if (cypher == null)
+            return;
+
+        if ((parameters == null || parameters.isEmpty()) && cypher.contains("'")) {
+            long quoteCount = cypher.chars().filter(ch -> ch == '\'').count();
+            if (quoteCount > 2) {
+                logger.warn("SECURITY: Detected Cypher query with multiple literals and no parameters. " +
+                        "Please use parameterized queries to prevent injection. Query: {}", cypher);
+            }
+        }
     }
 
     public LadybugDBConnectionFactory getConnectionFactory() {
@@ -248,9 +264,12 @@ public class LadybugDBTemplate {
     }
 
     private Map<String, Value> convertParameters(Map<String, Object> parameters) {
-        Map<String, Value> converted = new HashMap<>();
-        parameters.forEach((key, value) -> converted.put(key, toValue(value)));
-        return converted;
+        if (parameters != null && !parameters.isEmpty()) {
+            Map<String, Value> converted = new HashMap<>();
+            parameters.forEach((key, value) -> converted.put(key, toValue(value)));
+            return converted;
+        }
+        return Collections.emptyMap();
     }
 
     private Value toValue(Object obj) {
