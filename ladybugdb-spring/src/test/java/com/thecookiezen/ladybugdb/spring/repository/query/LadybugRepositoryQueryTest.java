@@ -125,6 +125,9 @@ class LadybugRepositoryQueryTest {
 
     @Test
     void testQueryNullParameter() {
+        // Insert a person to ensure that a null parameter does not accidentally match existing data
+        template.execute("CREATE (p:Person {name: $name, age: $age})", Map.of("name", "NullTest", "age", 20));
+
         Person p = repository.findByName(null);
         assertNull(p);
     }
