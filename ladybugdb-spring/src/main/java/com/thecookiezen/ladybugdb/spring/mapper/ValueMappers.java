@@ -127,8 +127,9 @@ public final class ValueMappers {
             List<T> result = new ArrayList<>((int) size);
 
             for (long i = 0; i < size; i++) {
-                Value element = lbugList.getListElement(i);
-                result.add(elementMapper.apply(element.getValue().toString()));
+                try (Value element = lbugList.getListElement(i)) {
+                    result.add(elementMapper.apply(element.getValue().toString()));
+                }
             }
 
             return result;

@@ -74,15 +74,25 @@ public class LadybugDBTemplate {
     /**
      * Execute a raw Cypher query (typically for write operations).
      *
-     * @param cypher the Cypher query string
+     * @param cypher     the Cypher query string
+     * @param parameters the query parameters
      */
     public void execute(String cypher, Map<String, Object> parameters) {
         execute(connection -> {
             logger.debug("Executing Cypher: {}", cypher);
-            PreparedStatement statement = connection.prepare(cypher);
             Map<String, Value> valueParameters = convertParameters(parameters);
-            QueryResult result = connection.execute(statement, valueParameters);
-            logger.debug("Execute result: {}", result);
+            try (PreparedStatement statement = connection.prepare(cypher);
+                    QueryResult result = connection.execute(statement, valueParameters)) {
+                logger.debug("Execute result: {}", result);
+            } finally {
+                // Parameters should be closed if they are new objects
+                valueParameters.values().forEach(v -> {
+                    try {
+                        v.close();
+                    } catch (Exception e) {
+                        /* ignore */ }
+                });
+            }
             return null;
         });
     }
@@ -123,52 +133,49 @@ public class LadybugDBTemplate {
         return execute(connection -> {
             logger.debug("Querying with Cypher: {}", cypher);
 
-            PreparedStatement statement = connection.prepare(cypher);
-            QueryResult result = connection.execute(statement, convertParameters(parameters));
-            List<T> results = new ArrayList<>();
-            int rowNum = 0;
+            Map<String, Value> valueParameters = convertParameters(parameters);
+            try (PreparedStatement statement = connection.prepare(cypher);
+                    QueryResult result = connection.execute(statement, valueParameters)) {
+                List<T> results = new ArrayList<>();
+                int rowNum = 0;
 
-            // Pre-compute column mapping once
-            int numColumns = (int) result.getNumColumns();
-            Map<String, Integer> columnToIndex = new HashMap<>(numColumns);
-            for (int i = 0; i < numColumns; i++) {
-                columnToIndex.put(result.getColumnName(i), i);
-            }
+                int numColumns = (int) result.getNumColumns();
+                Map<String, Integer> columnToIndex = new HashMap<>(numColumns);
+                for (int i = 0; i < numColumns; i++) {
+                    columnToIndex.put(result.getColumnName(i), i);
+                }
 
-            while (result.hasNext()) {
-                var row = result.getNext();
+                Value[] values = new Value[numColumns];
+                QueryRow queryRow = new DefaultQueryRow(values, columnToIndex);
 
-                logger.debug("Query result row {}: {}", rowNum, row);
-
-                try {
-                    Value[] values = new Value[numColumns];
+                while (result.hasNext()) {
+                    var row = result.getNext();
                     for (int i = 0; i < numColumns; i++) {
                         values[i] = row.getValue(i);
                     }
 
-                    QueryRow queryRow = new DefaultQueryRow(values, columnToIndex);
-                    T mapped = rowMapper.mapRow(queryRow);
-                    results.add(mapped);
-                } catch (Exception e) {
-                    throw new CypherMappingException("Error mapping row " + rowNum, e);
+                    try {
+                        T mapped = rowMapper.mapRow(queryRow);
+                        results.add(mapped);
+                    } catch (Exception e) {
+                        throw new CypherMappingException("Error mapping row " + rowNum, e);
+                    }
+                    rowNum++;
                 }
 
-                rowNum++;
+                logger.debug("Query returned {} results", results.size());
+                return results;
+            } finally {
+                valueParameters.values().forEach(v -> {
+                    try {
+                        v.close();
+                    } catch (Exception e) {
+                        /* ignore */ }
+                });
             }
-
-            logger.debug("Query returned {} results", results.size());
-            return results;
         });
     }
 
-    /**
-     * Execute a Cypher statement and return a single result.
-     *
-     * @param statement the Cypher DSL statement
-     * @param rowMapper the mapper to convert the row
-     * @param <T>       the result type
-     * @return Optional containing the result, or empty if no results
-     */
     public <T> Optional<T> queryForObject(Statement statement, RowMapper<T> rowMapper) {
         return queryForObject(statement.getCypher(), rowMapper);
     }
@@ -182,7 +189,11 @@ public class LadybugDBTemplate {
      * @return Optional containing the result, or empty if no results
      */
     public <T> Optional<T> queryForObject(String cypher, RowMapper<T> rowMapper) {
-        List<T> results = query(cypher, rowMapper);
+        return queryForObject(cypher, Map.of(), rowMapper);
+    }
+
+    public <T> Optional<T> queryForObject(String cypher, Map<String, Object> parameters, RowMapper<T> rowMapper) {
+        List<T> results = query(cypher, parameters, rowMapper);
         if (results.isEmpty()) {
             return Optional.empty();
         }
@@ -218,19 +229,12 @@ public class LadybugDBTemplate {
         return connectionFactory;
     }
 
-    /**
-     * Obtains a connection, potentially from the current transaction context.
-     */
     private Connection getConnection() {
-        // Check if we have a connection bound to the current transaction
-        ConnectionHolder holder = (ConnectionHolder) TransactionSynchronizationManager
-                .getResource(connectionFactory);
+        ConnectionHolder holder = (ConnectionHolder) TransactionSynchronizationManager.getResource(connectionFactory);
         if (holder != null) {
-            logger.debug("Using transaction-bound connection");
             return holder.getConnection();
         }
 
-        // No transaction, get a new connection from factory
         logger.debug("Obtaining new connection from factory");
         return connectionFactory.getConnection();
     }
@@ -245,8 +249,18 @@ public class LadybugDBTemplate {
 
     private Map<String, Value> convertParameters(Map<String, Object> parameters) {
         Map<String, Value> converted = new HashMap<>();
-        parameters.forEach((key, value) -> converted.put(key, value != null ? new Value(value) : Value.createNull()));
+        parameters.forEach((key, value) -> converted.put(key, toValue(value)));
         return converted;
+    }
+
+    private Value toValue(Object obj) {
+        if (obj == null) {
+            return Value.createNull();
+        }
+        if (obj instanceof Value v) {
+            return v;
+        }
+        return new Value(obj);
     }
 
     public static class CypherMappingException extends RuntimeException {

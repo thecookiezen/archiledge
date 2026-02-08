@@ -110,11 +110,21 @@ public class SimpleNodeRepository<T, R, ID> implements NodeRepository<T, ID, R, 
 
         @Override
         public Iterable<T> findAllById(Iterable<ID> ids) {
-                List<T> result = new ArrayList<>();
-                for (ID id : ids) {
-                        findById(id).ifPresent(result::add);
+                logger.debug("Finding all nodes of type {} by IDs", metadata.getNodeLabel());
+                List<ID> idList = new ArrayList<>();
+                ids.forEach(idList::add);
+
+                if (idList.isEmpty()) {
+                        return List.of();
                 }
-                return result;
+
+                Node n = Cypher.node(metadata.getNodeLabel()).named("n");
+                Statement statement = Cypher.match(n)
+                                .where(n.property(metadata.getIdPropertyName()).in(Cypher.literalOf(idList)))
+                                .returning(n)
+                                .build();
+
+                return template.query(statement, descriptor.reader());
         }
 
         @Override
@@ -152,9 +162,21 @@ public class SimpleNodeRepository<T, R, ID> implements NodeRepository<T, ID, R, 
 
         @Override
         public void deleteAllById(Iterable<? extends ID> ids) {
-                for (ID id : ids) {
-                        deleteById(id);
+                logger.debug("Deleting all nodes of type {} by IDs", metadata.getNodeLabel());
+                List<ID> idList = new ArrayList<>();
+                ids.forEach(idList::add);
+
+                if (idList.isEmpty()) {
+                        return;
                 }
+
+                Node n = Cypher.node(metadata.getNodeLabel()).named("n");
+                Statement statement = Cypher.match(n)
+                                .where(n.property(metadata.getIdPropertyName()).in(Cypher.literalOf(idList)))
+                                .detachDelete(n)
+                                .build();
+
+                template.execute(statement);
         }
 
         @Override
