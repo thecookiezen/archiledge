@@ -5,63 +5,41 @@ import com.thecookiezen.archiledger.domain.model.EntityId;
 import com.thecookiezen.archiledger.domain.model.EntityType;
 import com.thecookiezen.archiledger.domain.model.Relation;
 import com.thecookiezen.archiledger.domain.model.RelationType;
+import com.thecookiezen.archiledger.infrastructure.persistence.ladybugdb.LadybugDbRepository;
+import com.thecookiezen.archiledger.infrastructure.persistence.ladybugdb.LadybugKnowledgeGraphRepository;
 
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.Neo4jContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-
-import com.thecookiezen.archiledger.infrastructure.persistence.neo4j.repository.SpringDataNeo4jRepository;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
-@ActiveProfiles("neo4j")
-@Testcontainers
-class Neo4jKnowledgeGraphRepositoryAdapterTest {
+@ActiveProfiles("ladybugdb")
+class LadybugKnowledgeGraphRepositoryAdapterTest {
 
     @org.springframework.boot.SpringBootConfiguration
     @org.springframework.boot.autoconfigure.EnableAutoConfiguration
-    @org.springframework.context.annotation.ComponentScan(basePackages = "com.thecookiezen.archiledger.infrastructure.persistence.neo4j")
+    @org.springframework.context.annotation.ComponentScan(basePackages = "com.thecookiezen.archiledger.infrastructure.persistence.ladybugdb")
     static class TestConfig {
     }
 
-    @Container
-    static Neo4jContainer<?> neo4jContainer = new Neo4jContainer<>("neo4j:5")
-            .withoutAuthentication();
-
-    @DynamicPropertySource
-    static void neo4jProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.neo4j.uri", neo4jContainer::getBoltUrl);
-    }
-
-    @AfterAll
-    static void tearDown() {
-        if (neo4jContainer != null) {
-            neo4jContainer.close();
-        }
-    }
+    @Autowired
+    private LadybugKnowledgeGraphRepository repository;
 
     @Autowired
-    private Neo4jKnowledgeGraphRepositoryAdapter repository;
-
-    @Autowired
-    private SpringDataNeo4jRepository neo4jRepository;
+    private LadybugDbRepository ladybugDbRepository;
 
     @BeforeEach
     void cleanDatabase() {
-        neo4jRepository.deleteAll();
+        ladybugDbRepository.deleteAll();
     }
 
     @Test
@@ -227,5 +205,61 @@ class Neo4jKnowledgeGraphRepositoryAdapterTest {
     void findAllRelationTypes_whenEmpty_returnsEmptySet() {
         Set<RelationType> types = repository.findAllRelationTypes();
         assertTrue(types.isEmpty());
+    }
+
+    @Test
+    void deleteRelation_whenExists_deletesRelation() {
+        repository.saveEntity(new Entity("A", "Node"));
+        repository.saveEntity(new Entity("B", "Node"));
+        repository.saveRelation(new Relation("A", "B", "CALLS"));
+
+        repository.deleteRelation(new Relation("A", "B", "CALLS"));
+
+        List<Relation> relations = repository.findAllRelations();
+        assertTrue(relations.isEmpty());
+    }
+
+    @Test
+    void deleteRelation_whenNotExists_doesNothing() {
+        repository.saveEntity(new Entity("A", "Node"));
+        repository.saveEntity(new Entity("B", "Node"));
+
+        repository.deleteRelation(new Relation("A", "B", "CALLS"));
+
+        List<Relation> relations = repository.findAllRelations();
+        assertTrue(relations.isEmpty());
+    }
+
+    @Test
+    void deleteEntity_whenExists_deletesEntity() {
+        repository.saveEntity(new Entity("A", "Node"));
+
+        repository.deleteEntity(new EntityId("A"));
+
+        List<Entity> entities = repository.findAllEntities();
+        assertTrue(entities.isEmpty());
+    }
+
+    @Test
+    void deleteEntity_whenNotExists_doesNothing() {
+        repository.deleteEntity(new EntityId("A"));
+
+        List<Entity> entities = repository.findAllEntities();
+        assertTrue(entities.isEmpty());
+    }
+
+    @Test
+    void getGraph_returnsAllEntitiesAndRelations() {
+        repository.saveEntity(new Entity("A", "Node"));
+        repository.saveEntity(new Entity("B", "Node"));
+        repository.saveRelation(new Relation("A", "B", "CALLS"));
+
+        Map<String, Object> graph = repository.getGraph();
+
+        List<Entity> entities = (List<Entity>) graph.get("entities");
+        List<Relation> relations = (List<Relation>) graph.get("relations");
+
+        assertEquals(2, entities.size());
+        assertEquals(1, relations.size());
     }
 }

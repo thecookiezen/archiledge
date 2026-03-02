@@ -1,15 +1,11 @@
-package com.thecookiezen.archiledger.infrastructure.persistence.neo4j.model;
-
-import org.springframework.data.neo4j.core.schema.Id;
-import org.springframework.data.neo4j.core.schema.Node;
-import org.springframework.data.neo4j.core.schema.Relationship;
+package com.thecookiezen.archiledger.infrastructure.persistence.ladybugdb.model;
 
 import java.util.ArrayList;
 import java.util.List;
 
-@Node("Entity")
-public class Neo4jEntity {
+import org.springframework.data.annotation.Id;
 
+public class LadybugEntity {
     @Id
     private String name;
 
@@ -17,13 +13,12 @@ public class Neo4jEntity {
 
     private List<String> observations = new ArrayList<>();
 
-    @Relationship(type = "RELATED_TO", direction = Relationship.Direction.OUTGOING)
-    private List<Neo4jRelationConnection> relations = new ArrayList<>();
+    private List<LadybugRelation> relations = new ArrayList<>();
 
-    public Neo4jEntity() {
+    public LadybugEntity() {
     }
 
-    public Neo4jEntity(String name, String type) {
+    public LadybugEntity(String name, String type) {
         this.name = name;
         this.type = type;
     }
@@ -52,11 +47,11 @@ public class Neo4jEntity {
         this.observations = observations;
     }
 
-    public List<Neo4jRelationConnection> getRelations() {
+    public List<LadybugRelation> getRelations() {
         return relations;
     }
 
-    public void setRelations(List<Neo4jRelationConnection> relations) {
+    public void setRelations(List<LadybugRelation> relations) {
         this.relations = relations;
     }
 }
