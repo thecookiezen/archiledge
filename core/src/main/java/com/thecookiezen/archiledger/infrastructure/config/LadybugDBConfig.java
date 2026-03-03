@@ -4,6 +4,7 @@ import com.ladybugdb.Connection;
 import com.ladybugdb.Database;
 import com.thecookiezen.archiledger.infrastructure.persistence.ladybugdb.model.LadybugEntity;
 import com.thecookiezen.archiledger.infrastructure.persistence.ladybugdb.model.LadybugRelation;
+import com.thecookiezen.archiledger.infrastructure.persistence.ladybugdb.model.RelationProjection;
 import com.thecookiezen.ladybugdb.spring.config.EnableLadybugDBRepositories;
 import com.thecookiezen.ladybugdb.spring.connection.LadybugDBConnectionFactory;
 import com.thecookiezen.ladybugdb.spring.connection.PooledConnectionFactory;
@@ -54,6 +55,7 @@ public class LadybugDBConfig {
         if (dataDir == null || dataDir.isBlank()) {
             logger.info("No data directory configured, creating in-memory LadybugDB database");
             db = new Database(":memory:");
+            initializeSchema(db);
         } else {
             Path dataDirPath = Path.of(dataDir);
             boolean isNewDatabase = !Files.exists(dataDirPath.resolve("data"));
@@ -79,7 +81,7 @@ public class LadybugDBConfig {
                 logger.info("Entity node table ready");
             }
             try (var r2 = conn.query(
-                    "CREATE REL TABLE IF NOT EXISTS RELATED_TO(FROM Entity TO Entity, relationType STRING)")) {
+                    "CREATE REL TABLE IF NOT EXISTS RELATED_TO(FROM Entity TO Entity, name STRING, relationType STRING)")) {
                 if (!r2.isSuccess()) {
                     throw new RuntimeException("Failed to create RELATED_TO table: " + r2.getErrorMessage());
                 }
@@ -112,6 +114,7 @@ public class LadybugDBConfig {
         EntityRegistry registry = new EntityRegistry();
         registry.registerDescriptor(LadybugEntity.class, entityReader(), entityWriter());
         registry.registerDescriptor(LadybugRelation.class, relationReader(), relationWriter());
+        registry.registerDescriptor(RelationProjection.class, relationProjectionReader(), entity -> Map.of());
         return registry;
     }
 
@@ -149,18 +152,25 @@ public class LadybugDBConfig {
             target.setName(ValueMappers.asString(targetNode.get("name")));
             target.setType(ValueMappers.asString(targetNode.get("type")));
 
-            LadybugRelation relation = new LadybugRelation(source, target,
+            String name = ValueMappers.asString(rel.properties().get("name"));
+            return new LadybugRelation(name, source, target,
                     ValueMappers.asString(rel.properties().get("relationType")));
-            relation.setId(String.valueOf(rel.id()));
-            return relation;
         };
     }
 
     private EntityWriter<LadybugRelation> relationWriter() {
         return relation -> {
             Map<String, Object> props = new HashMap<>();
+            props.put("name", relation.getName());
             props.put("relationType", relation.getRelationType());
             return props;
         };
+    }
+
+    private RowMapper<RelationProjection> relationProjectionReader() {
+        return row -> new RelationProjection(
+                ValueMappers.asString(row.getValue("fromName")),
+                ValueMappers.asString(row.getValue("toName")),
+                ValueMappers.asString(row.getValue("relationType")));
     }
 }

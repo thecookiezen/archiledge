@@ -18,7 +18,7 @@ public interface LadybugDbRepository extends NodeRepository<LadybugEntity, Strin
     @Query("MATCH (source:Entity)-[r:RELATED_TO]->(target:Entity) WHERE r.relationType = $relationType RETURN source.name AS fromName, target.name AS toName, r.relationType AS relationType")
     List<RelationProjection> findRelationsByRelationType(String relationType);
 
-    @Query("MATCH (n:Entity)-[r:RELATED_TO]-(m:Entity) WHERE n.name = $entityName RETURN DISTINCT m")
+    @Query("MATCH (n:Entity)-[r:RELATED_TO]-(m:Entity) WHERE n.name = $entityName RETURN DISTINCT m AS n")
     List<LadybugEntity> findRelatedEntities(String entityName);
 
     @Query("MATCH (n:Entity) RETURN DISTINCT n.type AS type")

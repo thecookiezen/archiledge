@@ -6,8 +6,9 @@ import com.thecookiezen.ladybugdb.spring.annotation.RelationshipEntity;
 
 @RelationshipEntity(type = "RELATED_TO", nodeType = LadybugEntity.class, sourceField = "sourceEntity", targetField = "targetEntity")
 public class LadybugRelation {
+
     @Id
-    private String id;
+    private String name;
 
     private LadybugEntity sourceEntity;
 
@@ -18,18 +19,19 @@ public class LadybugRelation {
     public LadybugRelation() {
     }
 
-    public LadybugRelation(LadybugEntity sourceEntity, LadybugEntity targetEntity, String relationType) {
+    public LadybugRelation(String name, LadybugEntity sourceEntity, LadybugEntity targetEntity, String relationType) {
+        this.name = name;
         this.sourceEntity = sourceEntity;
         this.targetEntity = targetEntity;
         this.relationType = relationType;
     }
 
-    public String getId() {
-        return id;
+    public String getName() {
+        return name;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public void setName(String name) {
+        this.name = name;
     }
 
     public LadybugEntity getSourceEntity() {

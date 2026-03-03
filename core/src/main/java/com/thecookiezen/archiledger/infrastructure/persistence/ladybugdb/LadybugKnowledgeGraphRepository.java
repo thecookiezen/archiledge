@@ -53,7 +53,9 @@ public class LadybugKnowledgeGraphRepository implements KnowledgeGraphRepository
                         && r.getRelationType().equals(relation.relationType().value()));
 
         if (!exists) {
-            LadybugRelation ladybugRelation = new LadybugRelation(from, to, relation.relationType().value());
+            String relationName = from.getName() + "-" + relation.relationType().value() + "-" + to.getName();
+            LadybugRelation ladybugRelation = new LadybugRelation(relationName, from, to,
+                    relation.relationType().value());
             ladybugDbRepository.createRelation(from, to, ladybugRelation);
         }
     }
