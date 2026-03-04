@@ -8,7 +8,7 @@ import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.stereotype.Service;
 
-import com.thecookiezen.archiledger.domain.model.Entity;
+import com.thecookiezen.archiledger.domain.model.MemoryNote;
 import com.thecookiezen.archiledger.domain.repository.EmbeddingsService;
 
 @Service
@@ -21,9 +21,9 @@ public class InMemoryEmbeddingsService implements EmbeddingsService {
     }
 
     @Override
-    public void generateEmbeddings(Entity entity) {
+    public void generateEmbeddings(MemoryNote note) {
         vectorStore.add(List.of(
-                new Document(entity.name().toString(), entity.observationsJoined(), Collections.emptyMap())));
+                new Document(note.id().toString(), note.content(), Collections.emptyMap())));
     }
 
     @Override

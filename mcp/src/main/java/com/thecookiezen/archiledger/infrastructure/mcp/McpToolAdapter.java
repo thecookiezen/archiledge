@@ -1,13 +1,9 @@
 package com.thecookiezen.archiledger.infrastructure.mcp;
 
-import com.thecookiezen.archiledger.application.service.KnowledgeGraphService;
-import com.thecookiezen.archiledger.domain.model.Entity;
-import com.thecookiezen.archiledger.domain.model.EntityId;
-import com.thecookiezen.archiledger.domain.model.EntityType;
-import com.thecookiezen.archiledger.domain.model.Relation;
-import com.thecookiezen.archiledger.domain.model.RelationType;
-import com.thecookiezen.archiledger.infrastructure.mcp.dto.EntityDto;
-import com.thecookiezen.archiledger.infrastructure.mcp.dto.RelationDto;
+import com.thecookiezen.archiledger.application.service.MemoryNoteService;
+import com.thecookiezen.archiledger.domain.model.MemoryNoteId;
+import com.thecookiezen.archiledger.infrastructure.mcp.dto.MemoryNoteDto;
+import com.thecookiezen.archiledger.infrastructure.mcp.dto.NoteLinkDto;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.stereotype.Component;
@@ -20,111 +16,88 @@ import java.util.stream.Collectors;
 @Component
 public class McpToolAdapter {
 
-        private final KnowledgeGraphService knowledgeGraphService;
+        private final MemoryNoteService memoryNoteService;
 
-        public McpToolAdapter(KnowledgeGraphService knowledgeGraphService) {
-                this.knowledgeGraphService = knowledgeGraphService;
+        public McpToolAdapter(MemoryNoteService memoryNoteService) {
+                this.memoryNoteService = memoryNoteService;
         }
 
-        @Tool(name = "create_entities", description = "Create new entities in the knowledge graph. Entities are nodes in the graph and represent things like people, places, concepts, etc.")
-        public List<EntityDto> createEntities(
-                        @ToolParam(description = "List of entities to create") List<EntityDto> newEntities) {
-                List<Entity> domainEntities = newEntities.stream()
-                                .map(EntityDto::toDomain)
-                                .collect(Collectors.toList());
-                return knowledgeGraphService.createEntities(domainEntities).stream()
-                                .map(EntityDto::fromDomain)
+        @Tool(name = "create_notes", description = "Create one or more memory notes. Each note is an atomic unit of knowledge with content, keywords, tags, and optional links to other notes.")
+        public List<MemoryNoteDto> createNotes(
+                        @ToolParam(description = "List of memory notes to create") List<MemoryNoteDto> notes) {
+                return memoryNoteService.createNotes(
+                                notes.stream().map(MemoryNoteDto::toDomain).toList()).stream()
+                                .map(MemoryNoteDto::fromDomain)
                                 .collect(Collectors.toList());
         }
 
-        @Tool(name = "create_relations", description = "Create new relations between entities in the knowledge graph. Relations are edges in the graph and represent how entities are connected.")
-        public List<RelationDto> createRelations(
-                        @ToolParam(description = "List of relations to create") List<RelationDto> newRelations) {
-                List<Relation> domainRelations = newRelations.stream()
-                                .map(RelationDto::toDomain)
-                                .toList();
-                return knowledgeGraphService.createRelations(domainRelations).stream()
-                                .map(RelationDto::fromDomain)
+        @Tool(name = "add_links", description = "Add typed links between existing memory notes. Links represent connections with a relation type (e.g., 'DEPENDS_ON', 'RELATED_TO', 'CONTRADICTS').")
+        public void addLinks(
+                        @ToolParam(description = "List of links to create, each with source note ID, target note ID, and relation type") List<NoteLinkDto> links,
+                        @ToolParam(description = "The source note ID that all links originate from") String fromNoteId) {
+                for (NoteLinkDto link : links) {
+                        memoryNoteService.addLink(
+                                        new MemoryNoteId(fromNoteId),
+                                        new MemoryNoteId(link.target()),
+                                        link.relationType());
+                }
+        }
+
+        @Tool(name = "get_note", description = "Retrieve a specific memory note by its ID. Returns the note with its content, keywords, tags, links, and metadata. Increments the retrieval counter for relevance tracking.")
+        public Optional<MemoryNoteDto> getNote(
+                        @ToolParam(description = "ID of the note to retrieve") String noteId) {
+                return memoryNoteService.getNote(new MemoryNoteId(noteId))
+                                .map(MemoryNoteDto::fromDomain);
+        }
+
+        @Tool(name = "get_notes_by_tag", description = "Find all memory notes with a given tag. Useful for retrieving notes of a specific category (e.g., 'architecture', 'bug', 'decision').")
+        public List<MemoryNoteDto> getNotesByTag(
+                        @ToolParam(description = "Tag to search for (e.g., 'architecture', 'decision')") String tag) {
+                return memoryNoteService.getNotesByTag(tag).stream()
+                                .map(MemoryNoteDto::fromDomain)
                                 .collect(Collectors.toList());
         }
 
-        @Tool(name = "read_graph", description = "Read the entire knowledge graph. Returns all entities and relations.")
+        @Tool(name = "get_linked_notes", description = "Find all notes directly connected to a given note. Returns notes that are either linked from or linked to the specified note.")
+        public List<MemoryNoteDto> getLinkedNotes(
+                        @ToolParam(description = "ID of the note to find connections for") String noteId) {
+                return memoryNoteService.getLinkedNotes(new MemoryNoteId(noteId)).stream()
+                                .map(MemoryNoteDto::fromDomain)
+                                .collect(Collectors.toList());
+        }
+
+        @Tool(name = "search_notes", description = "Perform a semantic similarity search across all memory notes. Returns the most relevant notes based on vector embeddings of their content.")
+        public List<String> searchNotes(
+                        @ToolParam(description = "Natural language query to search for similar notes") String query) {
+                return memoryNoteService.similaritySearch(query);
+        }
+
+        @Tool(name = "delete_notes", description = "Delete one or more memory notes by their IDs. Also removes associated links and embeddings.")
+        public void deleteNotes(
+                        @ToolParam(description = "List of note IDs to delete") List<String> noteIds) {
+                memoryNoteService.deleteNotes(
+                                noteIds.stream().map(MemoryNoteId::new).collect(Collectors.toList()));
+        }
+
+        @Tool(name = "delete_links", description = "Remove typed links between memory notes.")
+        public void deleteLinks(
+                        @ToolParam(description = "Source note ID") String fromNoteId,
+                        @ToolParam(description = "List of links to remove") List<NoteLinkDto> links) {
+                for (NoteLinkDto link : links) {
+                        memoryNoteService.removeLink(
+                                        new MemoryNoteId(fromNoteId),
+                                        new MemoryNoteId(link.target()),
+                                        link.relationType());
+                }
+        }
+
+        @Tool(name = "read_graph", description = "Read the entire knowledge graph. Returns all memory notes and their links.")
         public Map<String, Object> readGraph() {
-                return knowledgeGraphService.readGraph();
+                return memoryNoteService.readGraph();
         }
 
-        @Tool(name = "delete_entities", description = "Delete entities from the knowledge graph by their names.")
-        public void deleteEntities(@ToolParam(description = "List of entity names to delete") List<String> names) {
-                List<EntityId> ids = names.stream()
-                                .map(EntityId::new)
-                                .collect(Collectors.toList());
-                knowledgeGraphService.deleteEntities(ids);
-        }
-
-        @Tool(name = "delete_relations", description = "Delete relations from the knowledge graph.")
-        public void deleteRelations(
-                        @ToolParam(description = "List of relations to delete") List<RelationDto> relationsToDelete) {
-                List<Relation> domainRelations = relationsToDelete.stream()
-                                .map(RelationDto::toDomain)
-                                .collect(Collectors.toList());
-                knowledgeGraphService.deleteRelations(domainRelations);
-        }
-
-        @Tool(name = "get_entity", description = "Get a specific entity by its name from the knowledge graph. Returns the entity with its type and observations.")
-        public Optional<EntityDto> getEntity(@ToolParam(description = "Name of the entity to retrieve") String name) {
-                return knowledgeGraphService.getEntity(new EntityId(name))
-                                .map(EntityDto::fromDomain);
-        }
-
-        @Tool(name = "get_entities_by_type", description = "Get all entities of a specific type from the knowledge graph. Example types: Person, Component, Service, Database, API.")
-        public List<EntityDto> getEntitiesByType(
-                        @ToolParam(description = "The entity type to filter by (e.g., 'Person', 'Component', 'Service')") String entityType) {
-                return knowledgeGraphService.getEntitiesByType(new EntityType(entityType)).stream()
-                                .map(EntityDto::fromDomain)
-                                .collect(Collectors.toList());
-        }
-
-        @Tool(name = "get_relations_for_entity", description = "Get all relations (both incoming and outgoing) for a specific entity. Returns all connections the entity has with other entities.")
-        public List<RelationDto> getRelationsForEntity(
-                        @ToolParam(description = "Name of the entity to get relations for") String entityName) {
-                return knowledgeGraphService.getRelationsForEntity(new EntityId(entityName)).stream()
-                                .map(RelationDto::fromDomain)
-                                .collect(Collectors.toList());
-        }
-
-        @Tool(name = "get_relations_by_type", description = "Get all relations of a specific type from the knowledge graph. Example types: DEPENDS_ON, USES, CONTAINS, CALLS, OWNS.")
-        public List<RelationDto> getRelationsByType(
-                        @ToolParam(description = "The relation type to filter by (e.g., 'DEPENDS_ON', 'USES', 'CONTAINS')") String relationType) {
-                return knowledgeGraphService.getRelationsByType(new RelationType(relationType)).stream()
-                                .map(RelationDto::fromDomain)
-                                .collect(Collectors.toList());
-        }
-
-        @Tool(name = "get_related_entities", description = "Find all entities that are directly connected to a given entity (either as source or target of any relation).")
-        public List<EntityDto> getRelatedEntities(
-                        @ToolParam(description = "Name of the entity to find related entities for") String entityName) {
-                return knowledgeGraphService.getRelatedEntities(new EntityId(entityName)).stream()
-                                .map(EntityDto::fromDomain)
-                                .collect(Collectors.toList());
-        }
-
-        @Tool(name = "get_entity_types", description = "List all unique entity types currently in the knowledge graph. Useful for discovering what types of entities exist.")
-        public List<String> getEntityTypes() {
-                return knowledgeGraphService.getEntityTypes().stream()
-                                .map(EntityType::value)
-                                .collect(Collectors.toList());
-        }
-
-        @Tool(name = "get_relation_types", description = "List all unique relation types currently in the knowledge graph. Useful for discovering what types of relationships exist.")
-        public List<String> getRelationTypes() {
-                return knowledgeGraphService.getRelationTypes().stream()
-                                .map(RelationType::value)
-                                .collect(Collectors.toList());
-        }
-
-        @Tool(name = "similarity_search", description = "Find entities most similar to a given query based on embeddings.")
-        public List<String> similaritySearch(
-                        @ToolParam(description = "Query to find similar entities for") String query) {
-                return knowledgeGraphService.similaritySearch(query);
+        @Tool(name = "get_all_tags", description = "List all unique tags currently used across all memory notes. Useful for discovering available categories.")
+        public List<String> getAllTags() {
+                return memoryNoteService.getAllTags().stream().toList();
         }
 }

@@ -3,11 +3,11 @@ package com.thecookiezen.archiledger.domain.model;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
-public record RelationType(String value) {
+public record MemoryNoteId(String value) {
     @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
-    public RelationType {
+    public MemoryNoteId {
         if (value == null || value.isBlank()) {
-            throw new IllegalArgumentException("RelationType cannot be null or blank");
+            throw new IllegalArgumentException("MemoryNoteId cannot be null or blank");
         }
     }
 

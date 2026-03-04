@@ -2,9 +2,9 @@ package com.thecookiezen.archiledger.infrastructure.config;
 
 import com.ladybugdb.Connection;
 import com.ladybugdb.Database;
-import com.thecookiezen.archiledger.infrastructure.persistence.ladybugdb.model.LadybugEntity;
-import com.thecookiezen.archiledger.infrastructure.persistence.ladybugdb.model.LadybugRelation;
-import com.thecookiezen.archiledger.infrastructure.persistence.ladybugdb.model.RelationProjection;
+import com.thecookiezen.archiledger.infrastructure.persistence.ladybugdb.model.LadybugMemoryNote;
+import com.thecookiezen.archiledger.infrastructure.persistence.ladybugdb.model.LadybugNoteLink;
+import com.thecookiezen.archiledger.infrastructure.persistence.ladybugdb.model.LinkProjection;
 import com.thecookiezen.ladybugdb.spring.config.EnableLadybugDBRepositories;
 import com.thecookiezen.ladybugdb.spring.connection.LadybugDBConnectionFactory;
 import com.thecookiezen.ladybugdb.spring.connection.PooledConnectionFactory;
@@ -74,18 +74,18 @@ public class LadybugDBConfig {
     private void initializeSchema(Database db) {
         try (Connection conn = new Connection(db)) {
             try (var r1 = conn.query(
-                    "CREATE NODE TABLE IF NOT EXISTS Entity(name STRING PRIMARY KEY, type STRING, observations STRING[])")) {
+                    "CREATE NODE TABLE IF NOT EXISTS MemoryNote(id STRING PRIMARY KEY, content STRING, keywords STRING[], context STRING, tags STRING[], timestamp STRING, retrievalCount INT64)")) {
                 if (!r1.isSuccess()) {
-                    throw new RuntimeException("Failed to create Entity table: " + r1.getErrorMessage());
+                    throw new RuntimeException("Failed to create MemoryNote table: " + r1.getErrorMessage());
                 }
-                logger.info("Entity node table ready");
+                logger.info("MemoryNote node table ready");
             }
             try (var r2 = conn.query(
-                    "CREATE REL TABLE IF NOT EXISTS RELATED_TO(FROM Entity TO Entity, name STRING, relationType STRING)")) {
+                    "CREATE REL TABLE IF NOT EXISTS LINKED_TO(FROM MemoryNote TO MemoryNote, name STRING, relationType STRING)")) {
                 if (!r2.isSuccess()) {
-                    throw new RuntimeException("Failed to create RELATED_TO table: " + r2.getErrorMessage());
+                    throw new RuntimeException("Failed to create LINKED_TO table: " + r2.getErrorMessage());
                 }
-                logger.info("RELATED_TO relationship table ready");
+                logger.info("LINKED_TO relationship table ready");
             }
         } catch (RuntimeException e) {
             throw e;
@@ -112,65 +112,72 @@ public class LadybugDBConfig {
     @Bean
     public EntityRegistry entityRegistry() {
         EntityRegistry registry = new EntityRegistry();
-        registry.registerDescriptor(LadybugEntity.class, entityReader(), entityWriter());
-        registry.registerDescriptor(LadybugRelation.class, relationReader(), relationWriter());
-        registry.registerDescriptor(RelationProjection.class, relationProjectionReader(), entity -> Map.of());
+        registry.registerDescriptor(LadybugMemoryNote.class, memoryNoteReader(), memoryNoteWriter());
+        registry.registerDescriptor(LadybugNoteLink.class, noteLinkReader(), noteLinkWriter());
+        registry.registerDescriptor(LinkProjection.class, linkProjectionReader(), entity -> Map.of());
         return registry;
     }
 
-    private RowMapper<LadybugEntity> entityReader() {
+    private RowMapper<LadybugMemoryNote> memoryNoteReader() {
         return row -> {
             var node = row.getNode("n");
-            LadybugEntity entity = new LadybugEntity();
-            entity.setName(ValueMappers.asString(node.get("name")));
-            entity.setType(ValueMappers.asString(node.get("type")));
-            entity.setObservations(ValueMappers.asStringList(node.get("observations")));
-            return entity;
+            LadybugMemoryNote note = new LadybugMemoryNote();
+            note.setId(ValueMappers.asString(node.get("id")));
+            note.setContent(ValueMappers.asString(node.get("content")));
+            note.setKeywords(ValueMappers.asStringList(node.get("keywords")));
+            note.setContext(ValueMappers.asString(node.get("context")));
+            note.setTags(ValueMappers.asStringList(node.get("tags")));
+            note.setTimestamp(ValueMappers.asString(node.get("timestamp")));
+            Integer retrievalCount = ValueMappers.asInteger(node.get("retrievalCount"));
+            note.setRetrievalCount(retrievalCount != null ? retrievalCount : 0);
+            return note;
         };
     }
 
-    private EntityWriter<LadybugEntity> entityWriter() {
-        return entity -> {
+    private EntityWriter<LadybugMemoryNote> memoryNoteWriter() {
+        return note -> {
             Map<String, Object> props = new HashMap<>();
-            props.put("type", entity.getType());
-            props.put("observations", entity.getObservations());
+            props.put("content", note.getContent());
+            props.put("keywords", note.getKeywords());
+            props.put("context", note.getContext());
+            props.put("tags", note.getTags());
+            props.put("timestamp", note.getTimestamp());
+            props.put("retrievalCount", note.getRetrievalCount());
             return props;
         };
     }
 
-    private RowMapper<LadybugRelation> relationReader() {
+    private RowMapper<LadybugNoteLink> noteLinkReader() {
         return row -> {
             var rel = row.getRelationship("rel");
             var sourceNode = row.getNode("s");
             var targetNode = row.getNode("t");
 
-            LadybugEntity source = new LadybugEntity();
-            source.setName(ValueMappers.asString(sourceNode.get("name")));
-            source.setType(ValueMappers.asString(sourceNode.get("type")));
+            LadybugMemoryNote source = new LadybugMemoryNote();
+            source.setId(ValueMappers.asString(sourceNode.get("id")));
 
-            LadybugEntity target = new LadybugEntity();
-            target.setName(ValueMappers.asString(targetNode.get("name")));
-            target.setType(ValueMappers.asString(targetNode.get("type")));
+            LadybugMemoryNote target = new LadybugMemoryNote();
+            target.setId(ValueMappers.asString(targetNode.get("id")));
 
             String name = ValueMappers.asString(rel.properties().get("name"));
-            return new LadybugRelation(name, source, target,
+            return new LadybugNoteLink(name, source, target,
                     ValueMappers.asString(rel.properties().get("relationType")));
         };
     }
 
-    private EntityWriter<LadybugRelation> relationWriter() {
-        return relation -> {
+    private EntityWriter<LadybugNoteLink> noteLinkWriter() {
+        return link -> {
             Map<String, Object> props = new HashMap<>();
-            props.put("name", relation.getName());
-            props.put("relationType", relation.getRelationType());
+            props.put("name", link.getName());
+            props.put("relationType", link.getRelationType());
             return props;
         };
     }
 
-    private RowMapper<RelationProjection> relationProjectionReader() {
-        return row -> new RelationProjection(
-                ValueMappers.asString(row.getValue("fromName")),
-                ValueMappers.asString(row.getValue("toName")),
+    private RowMapper<LinkProjection> linkProjectionReader() {
+        return row -> new LinkProjection(
+                ValueMappers.asString(row.getValue("fromId")),
+                ValueMappers.asString(row.getValue("toId")),
                 ValueMappers.asString(row.getValue("relationType")));
     }
 }

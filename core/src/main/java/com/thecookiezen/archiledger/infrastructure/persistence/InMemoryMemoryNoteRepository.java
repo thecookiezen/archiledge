@@ -1,0 +1,124 @@
+package com.thecookiezen.archiledger.infrastructure.persistence;
+
+import com.thecookiezen.archiledger.domain.model.MemoryNote;
+import com.thecookiezen.archiledger.domain.model.MemoryNoteId;
+import com.thecookiezen.archiledger.domain.model.NoteLink;
+import com.thecookiezen.archiledger.domain.repository.MemoryNoteRepository;
+import org.springframework.context.annotation.Profile;
+import org.springframework.stereotype.Repository;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
+
+@Repository
+@Profile("default")
+class InMemoryMemoryNoteRepository implements MemoryNoteRepository {
+
+    private final Map<MemoryNoteId, MemoryNote> notes = new ConcurrentHashMap<>();
+    private final List<StoredLink> links = new CopyOnWriteArrayList<>();
+
+    @Override
+    public MemoryNote save(MemoryNote note) {
+        notes.put(note.id(), note);
+        return note;
+    }
+
+    @Override
+    public Optional<MemoryNote> findById(MemoryNoteId id) {
+        return Optional.ofNullable(notes.get(id))
+                .map(note -> note.withLinks(findLinksFrom(id)));
+    }
+
+    @Override
+    public List<MemoryNote> findAll() {
+        return notes.values().stream()
+                .map(note -> note.withLinks(findLinksFrom(note.id())))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public void delete(MemoryNoteId id) {
+        notes.remove(id);
+        links.removeIf(link -> link.from.equals(id) || link.to.equals(id));
+    }
+
+    @Override
+    public void addLink(MemoryNoteId from, MemoryNoteId to, String relationType) {
+        boolean exists = links.stream()
+                .anyMatch(link -> link.from.equals(from) && link.to.equals(to)
+                        && link.relationType.equals(relationType));
+        if (!exists) {
+            links.add(new StoredLink(from, to, relationType));
+        }
+    }
+
+    @Override
+    public void removeLink(MemoryNoteId from, MemoryNoteId to, String relationType) {
+        links.removeIf(link -> link.from.equals(from) && link.to.equals(to)
+                && link.relationType.equals(relationType));
+    }
+
+    @Override
+    public List<NoteLink> findLinksFrom(MemoryNoteId id) {
+        return links.stream()
+                .filter(link -> link.from.equals(id))
+                .map(link -> new NoteLink(link.to, link.relationType))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<MemoryNote> findByTag(String tag) {
+        return notes.values().stream()
+                .filter(note -> note.tags().contains(tag))
+                .map(note -> note.withLinks(findLinksFrom(note.id())))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<MemoryNote> findLinkedNotes(MemoryNoteId noteId) {
+        Set<MemoryNoteId> linkedIds = new HashSet<>();
+        for (StoredLink link : links) {
+            if (link.from.equals(noteId)) {
+                linkedIds.add(link.to);
+            } else if (link.to.equals(noteId)) {
+                linkedIds.add(link.from);
+            }
+        }
+        return linkedIds.stream()
+                .map(notes::get)
+                .filter(note -> note != null)
+                .map(note -> note.withLinks(findLinksFrom(note.id())))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public Set<String> findAllTags() {
+        return notes.values().stream()
+                .flatMap(note -> note.tags().stream())
+                .collect(Collectors.toSet());
+    }
+
+    @Override
+    public Map<String, Object> getGraph() {
+        return Map.of(
+                "notes", findAll(),
+                "links", new ArrayList<>(links.stream()
+                        .map(l -> new NoteLink(l.to, l.relationType))
+                        .toList()));
+    }
+
+    @Override
+    public void incrementRetrievalCount(MemoryNoteId id) {
+        notes.computeIfPresent(id, (key, note) -> note.withRetrievalCount(note.retrievalCount() + 1));
+    }
+
+    private record StoredLink(MemoryNoteId from, MemoryNoteId to, String relationType) {
+    }
+}

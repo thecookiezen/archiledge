@@ -2,13 +2,13 @@ package com.thecookiezen.archiledger.domain.repository;
 
 import java.util.List;
 
-import com.thecookiezen.archiledger.domain.model.Entity;
+import com.thecookiezen.archiledger.domain.model.MemoryNote;
 
 public interface EmbeddingsService {
 
-    public void generateEmbeddings(Entity entity);
+    void generateEmbeddings(MemoryNote note);
 
-    public List<String> findClosestMatch(String text);
+    List<String> findClosestMatch(String text);
 
-    public void deleteEmbeddings(List<String> idList);
+    void deleteEmbeddings(List<String> idList);
 }

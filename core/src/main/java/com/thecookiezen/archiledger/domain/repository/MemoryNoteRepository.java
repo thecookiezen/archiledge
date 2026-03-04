@@ -1,0 +1,36 @@
+package com.thecookiezen.archiledger.domain.repository;
+
+import com.thecookiezen.archiledger.domain.model.MemoryNote;
+import com.thecookiezen.archiledger.domain.model.MemoryNoteId;
+import com.thecookiezen.archiledger.domain.model.NoteLink;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+
+public interface MemoryNoteRepository {
+    MemoryNote save(MemoryNote note);
+
+    Optional<MemoryNote> findById(MemoryNoteId id);
+
+    List<MemoryNote> findAll();
+
+    void delete(MemoryNoteId id);
+
+    void addLink(MemoryNoteId from, MemoryNoteId to, String relationType);
+
+    void removeLink(MemoryNoteId from, MemoryNoteId to, String relationType);
+
+    List<NoteLink> findLinksFrom(MemoryNoteId id);
+
+    List<MemoryNote> findByTag(String tag);
+
+    List<MemoryNote> findLinkedNotes(MemoryNoteId noteId);
+
+    Set<String> findAllTags();
+
+    Map<String, Object> getGraph();
+
+    void incrementRetrievalCount(MemoryNoteId id);
+}

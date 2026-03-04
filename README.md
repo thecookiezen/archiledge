@@ -18,35 +18,33 @@ Archiledger solves this by giving your AI a **graph-based memory**:
 
 | Problem | Archiledger Solution |
 |---------|---------------------|
-| Context resets every conversation | Persistent storage that survives restarts |
-| Flat, disconnected notes | Graph structure with entities and relations |
-| Manual note-taking | AI automatically stores and retrieves relevant info |
-| Hard to explore large codebases | Build navigable knowledge graphs from code |
-| Investigation dead ends | Follow relationships to discover connections |
-| Keyword search limits | **Vector search** finds semantically similar concepts |
+| Context resets every conversation | Persistent notes that survive restarts |
+| Flat, disconnected notes | Typed links between atomic notes (Zettelkasten principle) |
+| No way to categorize knowledge | Tags and keywords on every note |
+| No temporal awareness | ISO-8601 timestamps on every note |
+| No relevance signal | Retrieval count tracks frequently accessed notes |
+| Keyword search limits | **Vector search** finds semantically similar notes |
+| Hard to explore large knowledge bases | Graph traversal via typed `LINKED_TO` relationships |
 
-The graph model is particularly powerful because knowledge isn't flat — concepts relate to each other. When your AI can traverse these connections, it can provide richer context and discover non-obvious relationships.
+The Zettelkasten model is powerful because each note is atomic, self-contained, and linked. When your AI can traverse these typed connections, it can provide richer context and discover non-obvious relationships.
 
 ## Features
 
-- **Knowledge Graph**: Stores entities and relations.
+- **Knowledge Graph**: Atomic MemoryNotes connected by typed links.
 - **MCP Tools**:
-  - **Entity Management**:
-    - `create_entities`: Create new entities in the knowledge graph. Entities are nodes representing things like people, places, concepts, etc.
-    - `get_entity`: Get a specific entity by its name. Returns the entity with its type and observations.
-    - `get_entities_by_type`: Get all entities of a specific type (e.g., Person, Component, Service).
-    - `delete_entities`: Delete entities from the knowledge graph by their names.
-  - **Relation Management**:
-    - `create_relations`: Create relations between entities. Relations are edges representing how entities are connected.
-    - `get_relations_for_entity`: Get all relations (incoming and outgoing) for a specific entity.
-    - `get_relations_by_type`: Get all relations of a specific type (e.g., DEPENDS_ON, USES, CONTAINS).
-    - `delete_relations`: Delete relations from the knowledge graph.
+  - **Note Management**:
+    - `create_notes`: Create one or more memory notes with content, keywords, tags, and optional links.
+    - `get_note`: Retrieve a specific note by ID. Increments the retrieval counter for relevance tracking.
+    - `get_notes_by_tag`: Find all notes with a given tag (e.g., `architecture`, `decision`, `bug`).
+    - `delete_notes`: Delete notes by their IDs, including associated links and embeddings.
+  - **Link Management**:
+    - `add_links`: Add typed links between notes (e.g., `DEPENDS_ON`, `RELATED_TO`, `CONTRADICTS`).
+    - `delete_links`: Remove typed links between notes.
   - **Graph Exploration**:
-    - `read_graph`: Read the entire knowledge graph. Returns all entities and relations.
-    - `get_related_entities`: Find all entities directly connected to a given entity.
-    - `get_entity_types`: List all unique entity types in the graph.
-    - `get_relation_types`: List all unique relation types in the graph.
-    - `similarity_search`: Find entities based on semantic similarity using embeddings.
+    - `read_graph`: Read the entire knowledge graph. Returns all notes and their links.
+    - `get_linked_notes`: Find all notes directly connected to a given note.
+    - `get_all_tags`: List all unique tags currently used across notes.
+    - `search_notes`: Semantic similarity search across all note content using vector embeddings.
 
 ## Known Limitations & Performance Characteristics
 
@@ -54,9 +52,9 @@ The graph model is particularly powerful because knowledge isn't flat — concep
 
 | Limitation | Impact | Notes/Mitigation |
 |------------|--------|------------------|
-| **Embedded LadybugDB** | Single-process database with limited concurrency | Suitable for small datasets (<100k nodes). |
-| **Naive vector search** | Linear O(n) similarity matching across all entities | No HNSW or specialized vector index. Performance degrades with dataset size. |
-| **Memory-bound embeddings** | In-memory vector store consumes heap space | Consider external vector DB (Pinecone, Weaviate) for datasets >10k entities. |
+| **Embedded LadybugDB** | Single-process database with limited concurrency | Suitable for small datasets (<100k notes). |
+| **Naive vector search** | Linear O(n) similarity matching across all notes | No HNSW or specialized vector index. Performance degrades with dataset size. |
+| **Memory-bound embeddings** | In-memory vector store consumes heap space | Consider external vector DB (Pinecone, Weaviate) for datasets >10k notes. |
 | **No authentication** | All operations are unauthenticated | Intended for local/trusted environments only. |
 | **Heap-limited operations** | Large graph reads (`read_graph`) may OOM | Increase heap (`-Xmx`) or use pagination for large datasets. |
 
@@ -66,22 +64,23 @@ Based on load testing with 512MB heap:
 
 | Operation | Throughput | Notes |
 |-----------|------------|-------|
-| Entity creation | ~50-100 ops/sec | Using Cypher inserts |
-| Relation creation | ~30-60 ops/sec | Depends on graph connectivity |
-| Entity lookup by ID | <10ms | Direct index lookup |
-| Similarity search | O(n) | Scales linearly with entity count |
+| Note creation | ~50-100 ops/sec | Using Cypher inserts |
+| Link creation | ~30-60 ops/sec | Depends on graph connectivity |
+| Note lookup by ID | <10ms | Direct index lookup |
+| Similarity search | O(n) | Scales linearly with note count |
 
 > **💡 Tip:** For load testing see [LOAD_TESTING.md](./LOAD_TESTING.md).
 
 ## Architecture
 
-- **Domain Layer**: Contains the core business logic and entities (`Entity`, `Relation`). It defines the repository interface (`KnowledgeGraphRepository`).
-- **Application Layer**: Orchestrates the domain logic using services (`KnowledgeGraphService`).
+- **Domain Layer**: Contains the core domain model (`MemoryNote`, `MemoryNoteId`, `NoteLink`). Defines the repository port (`MemoryNoteRepository`).
+- **Application Layer**: Orchestrates the domain logic using services (`MemoryNoteService`). Handles retrieval count tracking and embedding generation.
 - **Infrastructure Layer**:
-  - **Persistence**: 
-    - `InMemoryKnowledgeGraphRepository`: In-memory implementation (default).
-    - `LadybugKnowledgeGraphRepository`: LadybugDB implementation (activates with `ladybugdb` profile).
-  - **MCP**: Acts as the primary adapter, exposing tools via the `McpToolAdapter`.
+  - **Persistence**:
+    - `InMemoryMemoryNoteRepository`: Thread-safe in-memory implementation (default profile).
+    - `LadybugMemoryNoteRepository`: LadybugDB graph database implementation (activates with `ladybugdb` profile). Notes are stored as graph nodes, links as `LINKED_TO` relationships.
+  - **Embeddings**: `InMemoryEmbeddingsService` generates vector embeddings from note content for semantic search.
+  - **MCP**: Acts as the primary adapter, exposing memory tools via the `McpToolAdapter`.
 
 ## Prerequisites
 
@@ -185,75 +184,77 @@ This MCP server can be used with LLM-based assistants (like GitHub Copilot, Gemi
 
 ### Use Case 1: Memory Bank
 
-Use the knowledge graph as a persistent memory bank to store and recall information across conversations. The LLM can remember context, preferences, project notes, and important decisions.
+Use the knowledge graph as a persistent memory bank. The LLM stores atomic pieces of knowledge as notes, tags them for categorization, and links related notes for richer context.
 
 ```markdown
 # Memory Bank Instructions
 
-You have access to a knowledge graph MCP server that serves as your persistent memory. Use it to store and retrieve important information across our conversations.
+You have access to a knowledge graph MCP server. Use it to store and retrieve atomic notes across conversations.
 
 ## Core Behaviors
 
 ### Proactive Memory Storage
-When the user shares important information, store it automatically:
+When the user shares important information, store it as an atomic note:
 - **Preferences**: User's coding style, preferred tools, naming conventions
 - **Decisions**: Architecture decisions, technology choices, rejected alternatives
 - **Context**: Project goals, constraints, team information
 - **Tasks**: Ongoing work, blockers, next steps
 
-### Memory Structure
-Use these entity types for organization:
+### Tagging Notes
+Use tags for categorization (a note can have multiple tags):
 - `preference` - User preferences and settings
 - `decision` - Important decisions with rationale
 - `context` - Project or domain context
 - `task` - Work items and their status
-- `note` - General notes and observations
+- `observation` - General notes and observations
 - `person` - Team members and stakeholders
 
-### Creating Memories
+### Creating Notes
 When storing information:
-1. Create an entity with a descriptive name
-2. Set the appropriate entityType
-3. Add detailed observations (store reasoning, not just facts)
+1. Give the note a descriptive ID (e.g., `java-naming-convention`, `db-migration-decision`)
+2. Write focused content (one idea per note — the Zettelkasten atomicity principle)
+3. Add relevant keywords for search
+4. Set appropriate tags for categorization
+5. Link to related notes using typed links
 
-### Recalling Memories
+### Recalling Notes
 At the start of each conversation:
 1. Use `read_graph` to get an overview of stored knowledge
-2. Use `similarity_search` to find relevant context for the current task
-3. Reference stored decisions and preferences in your responses
+2. Use `search_notes` to find semantically relevant notes
+3. Use `get_notes_by_tag` to retrieve notes by category
+4. Reference stored decisions and preferences in your responses
 
-### Creating Relations
-Link related memories for better context.
-
-#### Relation Types
+### Linking Notes
+Link related notes for better context using typed links:
 - `RELATES_TO` - General relationship
 - `DEPENDS_ON` - Dependency relationship
 - `AFFECTS` - One thing impacts another
 - `PART_OF` - Component/container relationship
 - `SUPERSEDES` - Replaces previous decision/approach
+- `CONTRADICTS` - Conflicts with another note
 ```
 
 ---
 
 ### Use Case 2: Codebase/Document Analysis
 
-Use the knowledge graph to build a structured representation of a codebase or document corpus. This is valuable for onboarding, architecture documentation, investigation, and understanding complex systems.
+Use the knowledge base to build a structured knowledge base from a codebase or document corpus. Each code concept becomes an atomic note, linked to related concepts.
 
 ```markdown
 # Codebase Knowledge Graph Builder
 
-You have access to a knowledge graph MCP server. Use it to create a structured knowledge base of the codebase for architecture documentation, onboarding, and investigation.
+You have access to a memory MCP server. Use it to create atomic knowledge notes from the codebase for architecture documentation, onboarding, and investigation.
 
 ## Analysis Workflow
 
 ### Phase 1: High-Level Structure
 Start by mapping the overall architecture:
 1. Identify major modules, packages, or services
-2. Create entities for each architectural component
-3. Map dependencies between components
+2. Create a note for each architectural component
+3. Link notes with `DEPENDS_ON`, `CONTAINS`, or `USES` links
 
 ### Phase 2: Deep Dive
-For each component, analyze and document:
+For each component, create detailed notes:
 1. Key classes, interfaces, and their responsibilities
 2. Important functions and their purposes
 3. Data models and their relationships
@@ -266,9 +267,9 @@ Document patterns that span multiple components:
 3. Configuration and environment handling
 4. Error handling strategies
 
-## Entity Types for Code Analysis
+## Tags for Code Analysis
 
-Use these entity types:
+Use these tags on notes:
 - `module` - Top-level packages, services, or bounded contexts
 - `component` - Major classes, interfaces, or subsystems
 - `function` - Important functions or methods
@@ -278,13 +279,9 @@ Use these entity types:
 - `api` - External or internal API endpoints
 - `dependency` - External libraries or services
 
-## Creating Code Entities
+## Link Types for Code
 
-When analyzing code, create detailed entities.
-
-## Relation Types for Code
-
-Use these relation types:
+Use these relation types when linking notes:
 - `DEPENDS_ON` - Class/module depends on another
 - `IMPLEMENTS` - Implements an interface or contract
 - `EXTENDS` - Inherits from another class
@@ -298,18 +295,18 @@ Use these relation types:
 
 Use the graph for code investigation:
 
-1. **Find dependencies**: Search for a component and examine its relations
-2. **Impact analysis**: Follow `DEPENDS_ON` relations to find affected components
-3. **Understand data flow**: Trace `CALLS`, `PRODUCES`, `CONSUMES` relations
-4. **Onboarding**: Start with `module` entities, then drill into `component` entities
+1. **Find dependencies**: Get a note and examine its links
+2. **Impact analysis**: Follow `DEPENDS_ON` links to find affected components
+3. **Understand data flow**: Trace `CALLS`, `PRODUCES`, `CONSUMES` links
+4. **Onboarding**: Search by `module` tag, then explore linked `component` notes
 
 ## Best Practices
 
-1. **Be consistent** with naming (use class names, not descriptions)
-2. **Include file paths** in observations for easy navigation
-3. **Document "why"** not just "what" - capture design rationale
-4. **Update incrementally** - add to the graph as you explore
-5. **Link generously** - relations are what make the graph valuable
+1. **One idea per note** — follow the Zettelkasten atomicity principle
+2. **Include file paths** in content or keywords for easy navigation
+3. **Document "why"** not just "what" — capture design rationale
+4. **Update incrementally** — add notes as you explore
+5. **Link generously** — typed links are what make the graph valuable
 ```
 
 ---
