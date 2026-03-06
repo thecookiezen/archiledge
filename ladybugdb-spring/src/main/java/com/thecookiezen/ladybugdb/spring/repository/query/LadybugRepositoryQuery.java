@@ -41,6 +41,11 @@ public class LadybugRepositoryQuery implements RepositoryQuery {
             }
         }
 
+        if (void.class.equals(domainType) || Void.class.equals(domainType)) {
+            template.execute(queryString, params);
+            return null;
+        }
+
         RowMapper<?> mapper = getRowMapper(domainType);
 
         @SuppressWarnings("unchecked")
