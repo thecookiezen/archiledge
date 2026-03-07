@@ -172,6 +172,44 @@ spring.ai.mcp.server.protocol=STREAMABLE
 server.port=8080
 ```
 
+### CORS Configuration
+
+By default, the server's HTTP interface restricts Cross-Origin requests. To support browser-based clients (e.g., MCP clients), you can enable and configure CORS via `application.properties`.
+
+| Property | Default | Description |
+|----------|---------|-------------|
+| `cors.enabled` | `false` | Main toggle for CORS support. |
+| `cors.allow-any-origin` | `false` | When true, sets `Access-Control-Allow-Origin` to `*`. |
+| `cors.origins` | `[]` | Explicit list of permitted origins (e.g., `https://app.local`). |
+| `cors.match-origins` | `[]` | Regex patterns for dynamic origin matching. |
+| `cors.allow-credentials` | `false` | Adds `Access-Control-Allow-Credentials` header. |
+| `cors.max-age` | `7200` | Preflight cache duration in seconds. |
+
+#### Usage Examples
+
+**1. Development (Permissive)**
+```properties
+cors.enabled=true
+cors.allow-any-origin=true
+```
+
+**2. Production (Restricted)**
+```properties
+cors.enabled=true
+cors.origins=https://my-secure-frontend.internal
+cors.allow-credentials=true
+```
+
+**3. Dynamic Subdomains (Regex Patterns)**
+```properties
+cors.enabled=true
+cors.match-origins=^http://localhost:\\d+$,^https://.*\\.my-company\\.com$
+```
+
+> [!IMPORTANT]
+> To support credentialed requests (`withCredentials: true`), you must use explicit origins or regex patterns. If `cors.allow-any-origin` is enabled, browsers will reject credentialed cross-origin requests.
+
+
 ### Vector Storage & Indexing Provider
 
 Generating vector embeddings (the math part) is handled by Spring AI via an ONNX model.
