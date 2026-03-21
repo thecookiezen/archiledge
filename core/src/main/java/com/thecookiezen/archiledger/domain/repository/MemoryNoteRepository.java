@@ -1,5 +1,6 @@
 package com.thecookiezen.archiledger.domain.repository;
 
+import com.thecookiezen.archiledger.domain.model.LinkDefinition;
 import com.thecookiezen.archiledger.domain.model.MemoryNote;
 import com.thecookiezen.archiledger.domain.model.MemoryNoteId;
 import com.thecookiezen.archiledger.domain.model.NoteLink;
@@ -19,7 +20,7 @@ public interface MemoryNoteRepository {
 
     void delete(MemoryNoteId id);
 
-    void addLink(MemoryNoteId from, MemoryNoteId to, String relationType);
+    void addLink(LinkDefinition link);
 
     void removeLink(MemoryNoteId from, MemoryNoteId to, String relationType);
 

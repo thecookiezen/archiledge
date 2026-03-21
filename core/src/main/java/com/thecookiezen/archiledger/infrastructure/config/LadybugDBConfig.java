@@ -95,7 +95,7 @@ public class LadybugDBConfig {
                 logger.info("HAS_EMBEDDING relationship table ready");
             }
             try (var r2 = conn.query(
-                    "CREATE REL TABLE IF NOT EXISTS LINKED_TO(FROM MemoryNote TO MemoryNote, name STRING, relationType STRING)")) {
+                    "CREATE REL TABLE IF NOT EXISTS LINKED_TO(FROM MemoryNote TO MemoryNote, name STRING, relationType STRING, context STRING)")) {
                 if (!r2.isSuccess()) {
                     throw new RuntimeException("Failed to create LINKED_TO table: " + r2.getErrorMessage());
                 }
@@ -184,7 +184,8 @@ public class LadybugDBConfig {
 
             String name = ValueMappers.asString(rel.properties().get("name"));
             return new LadybugNoteLink(name, source, target,
-                    ValueMappers.asString(rel.properties().get("relationType")));
+                    ValueMappers.asString(rel.properties().get("relationType")),
+                    ValueMappers.asString(rel.properties().get("context")));
         };
     }
 
@@ -193,6 +194,7 @@ public class LadybugDBConfig {
             Map<String, Object> props = new HashMap<>();
             props.put("name", link.getName());
             props.put("relationType", link.getRelationType());
+            props.put("context", link.getContext());
             return props;
         };
     }
@@ -201,7 +203,8 @@ public class LadybugDBConfig {
         return row -> new LinkProjection(
                 ValueMappers.asString(row.getValue("fromId")),
                 ValueMappers.asString(row.getValue("toId")),
-                ValueMappers.asString(row.getValue("relationType")));
+                ValueMappers.asString(row.getValue("relationType")),
+                ValueMappers.asString(row.getValue("context")));
     }
 
     private RowMapper<SimilarityResultProjection> similarityResultProjectionReader(RowMapper<LadybugMemoryNote> noteReader) {

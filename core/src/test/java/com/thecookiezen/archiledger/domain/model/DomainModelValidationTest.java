@@ -36,15 +36,16 @@ class DomainModelValidationTest {
     class NoteLinkTest {
         @Test
         void shouldCreateValidNoteLink() {
-            NoteLink link = new NoteLink("target-note", "DEPENDS_ON");
+            NoteLink link = new NoteLink("target-note", "DEPENDS_ON", "Explains the dependency relationship");
             assertEquals("target-note", link.target().value());
             assertEquals("DEPENDS_ON", link.relationType());
+            assertEquals("Explains the dependency relationship", link.context());
         }
 
         @Test
         void shouldThrowExceptionWhenTargetIsNull() {
             assertThrows(IllegalArgumentException.class,
-                    () -> new NoteLink((MemoryNoteId) null, "DEPENDS_ON"));
+                    () -> new NoteLink((MemoryNoteId) null, "DEPENDS_ON", "context"));
         }
 
         @ParameterizedTest
@@ -52,7 +53,15 @@ class DomainModelValidationTest {
         @ValueSource(strings = { " ", "\t", "\n" })
         void shouldThrowExceptionForInvalidRelationType(String invalidValue) {
             assertThrows(IllegalArgumentException.class,
-                    () -> new NoteLink("target", invalidValue));
+                    () -> new NoteLink("target", invalidValue, "context"));
+        }
+
+        @ParameterizedTest
+        @NullAndEmptySource
+        @ValueSource(strings = { " ", "\t", "\n" })
+        void shouldThrowExceptionForInvalidContext(String invalidValue) {
+            assertThrows(IllegalArgumentException.class,
+                    () -> new NoteLink("target", "DEPENDS_ON", invalidValue));
         }
     }
 
@@ -67,7 +76,7 @@ class DomainModelValidationTest {
                     List.of("java", "architecture"),
                     "project-x",
                     List.of("design", "backend"),
-                    List.of(new NoteLink("note-2", "RELATED_TO")),
+                    List.of(new NoteLink("note-2", "RELATED_TO", "test context")),
                     "2026-03-04T16:00:00Z",
                     0,
                     null);
@@ -136,7 +145,7 @@ class DomainModelValidationTest {
                     List.of("keyword"),
                     null,
                     List.of("tag"),
-                    List.of(new NoteLink("note-2", "RELATED_TO")),
+                    List.of(new NoteLink("note-2", "RELATED_TO", "test context")),
                     "2026-03-04T16:00:00Z",
                     0,
                     null);
@@ -144,7 +153,7 @@ class DomainModelValidationTest {
             assertThrows(UnsupportedOperationException.class, () -> note.keywords().add("new"));
             assertThrows(UnsupportedOperationException.class, () -> note.tags().add("new"));
             assertThrows(UnsupportedOperationException.class,
-                    () -> note.links().add(new NoteLink("note-3", "X")));
+                    () -> note.links().add(new NoteLink("note-3", "X", "test context")));
         }
 
         @Test
@@ -167,7 +176,7 @@ class DomainModelValidationTest {
                     new MemoryNoteId("note-1"), "content", List.of(), null, List.of(), List.of(),
                     "2026-03-04T16:00:00Z", 0, null);
 
-            List<NoteLink> newLinks = List.of(new NoteLink("note-2", "RELATED_TO"));
+            List<NoteLink> newLinks = List.of(new NoteLink("note-2", "RELATED_TO", "test context"));
             MemoryNote updated = original.withLinks(newLinks);
 
             assertTrue(original.links().isEmpty());

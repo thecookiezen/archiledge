@@ -16,15 +16,18 @@ public class LadybugNoteLink {
 
     private String relationType;
 
+    private String context;
+
     public LadybugNoteLink() {
     }
 
     public LadybugNoteLink(String name, LadybugMemoryNote sourceNote, LadybugMemoryNote targetNote,
-            String relationType) {
+            String relationType, String context) {
         this.name = name;
         this.sourceNote = sourceNote;
         this.targetNote = targetNote;
         this.relationType = relationType;
+        this.context = context;
     }
 
     public String getName() {
@@ -57,5 +60,13 @@ public class LadybugNoteLink {
 
     public void setRelationType(String relationType) {
         this.relationType = relationType;
+    }
+
+    public String getContext() {
+        return context;
+    }
+
+    public void setContext(String context) {
+        this.context = context;
     }
 }

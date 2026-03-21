@@ -1,5 +1,6 @@
 package com.thecookiezen.archiledger.application.service;
 
+import com.thecookiezen.archiledger.domain.model.LinkDefinition;
 import com.thecookiezen.archiledger.domain.model.MemoryNote;
 import com.thecookiezen.archiledger.domain.model.MemoryNoteId;
 import com.thecookiezen.archiledger.domain.model.SimilarityResult;
@@ -65,8 +66,8 @@ class MemoryNoteServiceImpl implements MemoryNoteService {
     }
 
     @Override
-    public void addLink(MemoryNoteId from, MemoryNoteId to, String relationType) {
-        repository.addLink(from, to, relationType);
+    public void addLink(LinkDefinition link) {
+        repository.addLink(link);
     }
 
     @Override

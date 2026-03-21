@@ -1,5 +1,6 @@
 package com.thecookiezen.archiledger.infrastructure.persistence.ladybug;
 
+import com.thecookiezen.archiledger.domain.model.LinkDefinition;
 import com.thecookiezen.archiledger.domain.model.MemoryNote;
 import com.thecookiezen.archiledger.domain.model.MemoryNoteId;
 import com.thecookiezen.archiledger.domain.model.NoteLink;
@@ -91,7 +92,7 @@ class LadybugMemoryNoteRepositoryAdapterTest {
         repository.save(sampleNote("A", List.of()));
         repository.save(sampleNote("B", List.of()));
 
-        repository.addLink(new MemoryNoteId("A"), new MemoryNoteId("B"), "DEPENDS_ON");
+        repository.addLink(new LinkDefinition("A", "B", "DEPENDS_ON", "A depends on B for functionality"));
 
         List<NoteLink> links = repository.findLinksFrom(new MemoryNoteId("A"));
         assertEquals(1, links.size());
@@ -103,7 +104,7 @@ class LadybugMemoryNoteRepositoryAdapterTest {
     void findById_hydratesLinks() {
         repository.save(sampleNote("A", List.of()));
         repository.save(sampleNote("B", List.of()));
-        repository.addLink(new MemoryNoteId("A"), new MemoryNoteId("B"), "CALLS");
+        repository.addLink(new LinkDefinition("A", "B", "CALLS", "A calls B for processing"));
 
         Optional<MemoryNote> result = repository.findById(new MemoryNoteId("A"));
 
@@ -132,8 +133,8 @@ class LadybugMemoryNoteRepositoryAdapterTest {
         repository.save(sampleNote("C", List.of()));
         repository.save(sampleNote("D", List.of()));
 
-        repository.addLink(new MemoryNoteId("A"), new MemoryNoteId("B"), "CALLS");
-        repository.addLink(new MemoryNoteId("C"), new MemoryNoteId("A"), "DEPENDS_ON");
+        repository.addLink(new LinkDefinition("A", "B", "CALLS", "A calls B for processing"));
+        repository.addLink(new LinkDefinition("C", "A", "DEPENDS_ON", "C depends on A"));
 
         List<MemoryNote> linked = repository.findLinkedNotes(new MemoryNoteId("A"));
 
@@ -151,9 +152,9 @@ class LadybugMemoryNoteRepositoryAdapterTest {
         repository.save(sampleNote("C", List.of()));
         repository.save(sampleNote("D", List.of()));
 
-        repository.addLink(new MemoryNoteId("A"), new MemoryNoteId("B"), "CONTAINS");
-        repository.addLink(new MemoryNoteId("A"), new MemoryNoteId("C"), "CONTAINS");
-        repository.addLink(new MemoryNoteId("A"), new MemoryNoteId("D"), "RELATED_TO");
+        repository.addLink(new LinkDefinition("A", "B", "CONTAINS", "A contains B"));
+        repository.addLink(new LinkDefinition("A", "C", "CONTAINS", "A contains C"));
+        repository.addLink(new LinkDefinition("A", "D", "RELATED_TO", "A is related to D"));
 
         List<MemoryNote> result = repository.findLinkedNotes(new MemoryNoteId("A"), "CONTAINS", 10);
 
@@ -170,9 +171,9 @@ class LadybugMemoryNoteRepositoryAdapterTest {
         repository.save(sampleNote("C", List.of()));
         repository.save(sampleNote("D", List.of()));
 
-        repository.addLink(new MemoryNoteId("A"), new MemoryNoteId("B"), "CONTAINS");
-        repository.addLink(new MemoryNoteId("A"), new MemoryNoteId("C"), "CONTAINS");
-        repository.addLink(new MemoryNoteId("A"), new MemoryNoteId("D"), "CONTAINS");
+        repository.addLink(new LinkDefinition("A", "B", "CONTAINS", "test link"));
+        repository.addLink(new LinkDefinition("A", "C", "CONTAINS", "test link"));
+        repository.addLink(new LinkDefinition("A", "D", "CONTAINS", "test link"));
 
         List<MemoryNote> result = repository.findLinkedNotes(new MemoryNoteId("A"), "CONTAINS", 2);
 
@@ -183,7 +184,7 @@ class LadybugMemoryNoteRepositoryAdapterTest {
     void findLinkedNotes_withRelationType_returnsEmptyWhenNoMatch() {
         repository.save(sampleNote("A", List.of()));
         repository.save(sampleNote("B", List.of()));
-        repository.addLink(new MemoryNoteId("A"), new MemoryNoteId("B"), "CONTAINS");
+        repository.addLink(new LinkDefinition("A", "B", "CONTAINS", "test link"));
 
         List<MemoryNote> result = repository.findLinkedNotes(new MemoryNoteId("A"), "RELATED_TO", 10);
 
@@ -195,8 +196,8 @@ class LadybugMemoryNoteRepositoryAdapterTest {
         repository.save(sampleNote("A", List.of()));
         repository.save(sampleNote("B", List.of()));
         repository.save(sampleNote("C", List.of()));
-        repository.addLink(new MemoryNoteId("A"), new MemoryNoteId("B"), "CONTAINS");
-        repository.addLink(new MemoryNoteId("B"), new MemoryNoteId("C"), "CONTAINS");
+        repository.addLink(new LinkDefinition("A", "B", "CONTAINS", "test link"));
+        repository.addLink(new LinkDefinition("B", "C", "CONTAINS", "test link"));
 
         List<MemoryNote> result = repository.findNotesUpward(new MemoryNoteId("A"), 2, 10);
         assertEquals(2, result.size());
@@ -212,10 +213,10 @@ class LadybugMemoryNoteRepositoryAdapterTest {
         repository.save(sampleNote("D", List.of()));
         repository.save(sampleNote("E", List.of()));
 
-        repository.addLink(new MemoryNoteId("A"), new MemoryNoteId("B"), "CONTAINS");
-        repository.addLink(new MemoryNoteId("B"), new MemoryNoteId("C"), "CONTAINS");
-        repository.addLink(new MemoryNoteId("C"), new MemoryNoteId("D"), "CONTAINS");
-        repository.addLink(new MemoryNoteId("D"), new MemoryNoteId("E"), "CONTAINS");
+        repository.addLink(new LinkDefinition("A", "B", "CONTAINS", "test link"));
+        repository.addLink(new LinkDefinition("B", "C", "CONTAINS", "test link"));
+        repository.addLink(new LinkDefinition("C", "D", "CONTAINS", "test link"));
+        repository.addLink(new LinkDefinition("D", "E", "CONTAINS", "test link"));
 
         List<MemoryNote> result = repository.findNotesUpward(new MemoryNoteId("A"), 2, 10);
         assertEquals(2, result.size());
@@ -230,9 +231,9 @@ class LadybugMemoryNoteRepositoryAdapterTest {
         repository.save(sampleNote("C", List.of()));
         repository.save(sampleNote("D", List.of()));
 
-        repository.addLink(new MemoryNoteId("A"), new MemoryNoteId("B"), "CONTAINS");
-        repository.addLink(new MemoryNoteId("A"), new MemoryNoteId("C"), "CONTAINS");
-        repository.addLink(new MemoryNoteId("A"), new MemoryNoteId("D"), "CONTAINS");
+        repository.addLink(new LinkDefinition("A", "B", "CONTAINS", "test link"));
+        repository.addLink(new LinkDefinition("A", "C", "CONTAINS", "test link"));
+        repository.addLink(new LinkDefinition("A", "D", "CONTAINS", "test link"));
 
         List<MemoryNote> result = repository.findNotesUpward(new MemoryNoteId("A"), 1, 2);
 
@@ -245,8 +246,8 @@ class LadybugMemoryNoteRepositoryAdapterTest {
         repository.save(sampleNote("B", List.of()));
         repository.save(sampleNote("C", List.of()));
 
-        repository.addLink(new MemoryNoteId("A"), new MemoryNoteId("B"), "CONTAINS");
-        repository.addLink(new MemoryNoteId("A"), new MemoryNoteId("C"), "RELATED_TO");
+        repository.addLink(new LinkDefinition("A", "B", "CONTAINS", "test link"));
+        repository.addLink(new LinkDefinition("A", "C", "RELATED_TO", "test link"));
 
         List<MemoryNote> result = repository.findNotesUpward(new MemoryNoteId("A"), 1, 10);
 
@@ -275,7 +276,7 @@ class LadybugMemoryNoteRepositoryAdapterTest {
     void removeLink() {
         repository.save(sampleNote("A", List.of()));
         repository.save(sampleNote("B", List.of()));
-        repository.addLink(new MemoryNoteId("A"), new MemoryNoteId("B"), "CALLS");
+        repository.addLink(new LinkDefinition("A", "B", "CALLS", "A calls B for processing"));
 
         repository.removeLink(new MemoryNoteId("A"), new MemoryNoteId("B"), "CALLS");
 
@@ -307,7 +308,7 @@ class LadybugMemoryNoteRepositoryAdapterTest {
     void getGraph_returnsAllNotesAndLinks() {
         repository.save(sampleNote("A", List.of()));
         repository.save(sampleNote("B", List.of()));
-        repository.addLink(new MemoryNoteId("A"), new MemoryNoteId("B"), "CALLS");
+        repository.addLink(new LinkDefinition("A", "B", "CALLS", "A calls B for processing"));
 
         Map<String, Object> graph = repository.getGraph();
 

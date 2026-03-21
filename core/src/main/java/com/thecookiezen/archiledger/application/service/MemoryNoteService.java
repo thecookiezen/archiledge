@@ -1,5 +1,6 @@
 package com.thecookiezen.archiledger.application.service;
 
+import com.thecookiezen.archiledger.domain.model.LinkDefinition;
 import com.thecookiezen.archiledger.domain.model.MemoryNote;
 import com.thecookiezen.archiledger.domain.model.MemoryNoteId;
 import com.thecookiezen.archiledger.domain.model.SimilarityResult;
@@ -22,7 +23,7 @@ public interface MemoryNoteService {
 
     void deleteNotes(List<MemoryNoteId> ids);
 
-    void addLink(MemoryNoteId from, MemoryNoteId to, String relationType);
+    void addLink(LinkDefinition link);
 
     void removeLink(MemoryNoteId from, MemoryNoteId to, String relationType);
 

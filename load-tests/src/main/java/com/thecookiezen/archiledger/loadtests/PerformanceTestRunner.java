@@ -13,6 +13,7 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
 import com.thecookiezen.archiledger.application.service.MemoryNoteService;
+import com.thecookiezen.archiledger.domain.model.LinkDefinition;
 import com.thecookiezen.archiledger.domain.model.MemoryNote;
 import com.thecookiezen.archiledger.domain.model.MemoryNoteId;
 
@@ -155,7 +156,7 @@ public class PerformanceTestRunner implements CommandLineRunner {
                     }
                 }
                 for (MemoryNoteId[] pair : linkPairs) {
-                    memoryNoteService.addLink(pair[0], pair[1], "RELATED_TO");
+                    memoryNoteService.addLink(new LinkDefinition(pair[0], pair[1], "RELATED_TO", "Performance test link"));
                 }
                 createdLinksCount = linkPairs.size();
             }

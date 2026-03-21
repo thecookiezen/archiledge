@@ -1,5 +1,6 @@
 package com.thecookiezen.archiledger.infrastructure.persistence.ladybugdb;
 
+import com.thecookiezen.archiledger.domain.model.LinkDefinition;
 import com.thecookiezen.archiledger.domain.model.MemoryNote;
 import com.thecookiezen.archiledger.domain.model.MemoryNoteId;
 import com.thecookiezen.archiledger.domain.model.NoteLink;
@@ -50,7 +51,7 @@ public class LadybugMemoryNoteRepository implements MemoryNoteRepository {
         }
 
         for (NoteLink link : note.links()) {
-            addLink(note.id(), link.target(), link.relationType());
+            addLink(new LinkDefinition(note.id(), link.target(), link.relationType(), link.context()));
         }
 
         return toDomainNote(saved);
@@ -75,20 +76,21 @@ public class LadybugMemoryNoteRepository implements MemoryNoteRepository {
     }
 
     @Override
-    public void addLink(MemoryNoteId from, MemoryNoteId to, String relationType) {
-        LadybugMemoryNote sourceNote = dbRepository.findById(from.value())
-                .orElseThrow(() -> new IllegalArgumentException("Source note not found: " + from.value()));
-        LadybugMemoryNote targetNote = dbRepository.findById(to.value())
-                .orElseThrow(() -> new IllegalArgumentException("Target note not found: " + to.value()));
+    public void addLink(LinkDefinition link) {
+        LadybugMemoryNote sourceNote = dbRepository.findById(link.source().value())
+                .orElseThrow(() -> new IllegalArgumentException("Source note not found: " + link.source().value()));
+        LadybugMemoryNote targetNote = dbRepository.findById(link.target().value())
+                .orElseThrow(() -> new IllegalArgumentException("Target note not found: " + link.target().value()));
 
-        boolean exists = dbRepository.findLinksFrom(from.value()).stream()
-                .anyMatch(link -> link.toId().equals(to.value())
-                        && link.relationType().equals(relationType));
+        boolean exists = dbRepository.findLinksFrom(link.source().value()).stream()
+                .anyMatch(existingLink -> existingLink.toId().equals(link.target().value())
+                        && existingLink.relationType().equals(link.relationType())
+                        && (existingLink.context() != null && existingLink.context().equals(link.context())));
 
         if (!exists) {
-            String linkName = from.value() + "-" + relationType + "-" + to.value();
-            LadybugNoteLink link = new LadybugNoteLink(linkName, sourceNote, targetNote, relationType);
-            dbRepository.createRelation(sourceNote, targetNote, link);
+            String linkName = link.source().value() + "-" + link.relationType() + "-" + link.target().value();
+            LadybugNoteLink ladybugLink = new LadybugNoteLink(linkName, sourceNote, targetNote, link.relationType(), link.context());
+            dbRepository.createRelation(sourceNote, targetNote, ladybugLink);
         }
     }
 
@@ -215,6 +217,6 @@ public class LadybugMemoryNoteRepository implements MemoryNoteRepository {
     }
 
     private NoteLink toDomainLink(LinkProjection projection) {
-        return new NoteLink(new MemoryNoteId(projection.toId()), projection.relationType());
+        return new NoteLink(new MemoryNoteId(projection.toId()), projection.relationType(), projection.context());
     }
 }

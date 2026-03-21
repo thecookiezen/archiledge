@@ -15,13 +15,13 @@ public interface MemoryNoteDbRepository
         @Query("MATCH (n:MemoryNote) WHERE list_contains(n.tags, $tag) RETURN n")
         List<LadybugMemoryNote> findByTag(String tag);
 
-        @Query("MATCH (source:MemoryNote)-[r:LINKED_TO]->(target:MemoryNote) WHERE source.id = $noteId OR target.id = $noteId RETURN source.id AS fromId, target.id AS toId, r.relationType AS relationType")
+        @Query("MATCH (source:MemoryNote)-[r:LINKED_TO]->(target:MemoryNote) WHERE source.id = $noteId OR target.id = $noteId RETURN source.id AS fromId, target.id AS toId, r.relationType AS relationType, r.context AS context")
         List<LinkProjection> findLinksForNote(String noteId);
 
-        @Query("MATCH (source:MemoryNote)-[r:LINKED_TO]->(target:MemoryNote) WHERE source.id = $noteId RETURN source.id AS fromId, target.id AS toId, r.relationType AS relationType")
+        @Query("MATCH (source:MemoryNote)-[r:LINKED_TO]->(target:MemoryNote) WHERE source.id = $noteId RETURN source.id AS fromId, target.id AS toId, r.relationType AS relationType, r.context AS context")
         List<LinkProjection> findLinksFrom(String noteId);
 
-        @Query("MATCH (source:MemoryNote)-[r:LINKED_TO]->(target:MemoryNote) WHERE r.relationType = $relationType RETURN source.id AS fromId, target.id AS toId, r.relationType AS relationType")
+        @Query("MATCH (source:MemoryNote)-[r:LINKED_TO]->(target:MemoryNote) WHERE r.relationType = $relationType RETURN source.id AS fromId, target.id AS toId, r.relationType AS relationType, r.context AS context")
         List<LinkProjection> findLinksByRelationType(String relationType);
 
         @Query("MATCH (n:MemoryNote)-[r:LINKED_TO]-(m:MemoryNote) WHERE n.id = $noteId RETURN DISTINCT m AS n")
@@ -33,7 +33,7 @@ public interface MemoryNoteDbRepository
         @Query("MATCH (n:MemoryNote) UNWIND n.tags AS tag RETURN DISTINCT tag")
         List<String> findAllTags();
 
-        @Query("MATCH (source:MemoryNote)-[r:LINKED_TO]->(target:MemoryNote) RETURN source.id AS fromId, target.id AS toId, r.relationType AS relationType")
+        @Query("MATCH (source:MemoryNote)-[r:LINKED_TO]->(target:MemoryNote) RETURN source.id AS fromId, target.id AS toId, r.relationType AS relationType, r.context AS context")
         List<LinkProjection> findAllLinks();
 
         @Query(value = "CALL QUERY_VECTOR_INDEX('NoteEmbedding', 'note_embedding_idx', $queryVector, $limit) YIELD node, distance MATCH (n:MemoryNote)-[:HAS_EMBEDDING]->(node) RETURN n, distance AS score ORDER BY distance", loadExtensions = {

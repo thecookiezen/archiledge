@@ -1,6 +1,7 @@
 package com.thecookiezen.archiledger.infrastructure.mcp;
 
 import com.thecookiezen.archiledger.application.service.MemoryNoteService;
+import com.thecookiezen.archiledger.domain.model.LinkDefinition;
 import com.thecookiezen.archiledger.domain.model.MemoryNote;
 import com.thecookiezen.archiledger.domain.model.MemoryNoteId;
 import com.thecookiezen.archiledger.domain.model.SimilarityResult;
@@ -35,15 +36,16 @@ public class McpToolAdapter {
                                 .collect(Collectors.toList());
         }
 
-        @Tool(name = "add_links", description = "Add typed links between existing memory notes. Links represent connections with a relation type (e.g., 'DEPENDS_ON', 'RELATED_TO', 'CONTRADICTS').")
+        @Tool(name = "add_links", description = "Add typed links between existing memory notes. Links represent connections with a relation type (e.g., 'DEPENDS_ON', 'RELATED_TO', 'CONTRADICTS') and context explaining why the link exists.")
         public void addLinks(
-                        @ToolParam(description = "List of links to create, each with source note ID, target note ID, and relation type") List<NoteLinksDto> links) {
+                        @ToolParam(description = "List of links to create, each with source note ID, target note ID, relation type, and context") List<NoteLinksDto> links) {
                 for (NoteLinksDto link : links) {
                         for (NoteLinkDto noteLink : link.links()) {
-                                memoryNoteService.addLink(
-                                                new MemoryNoteId(link.fromNoteId()),
-                                                new MemoryNoteId(noteLink.target()),
-                                                noteLink.relationType());
+                                memoryNoteService.addLink(new LinkDefinition(
+                                                link.fromNoteId(),
+                                                noteLink.target(),
+                                                noteLink.relationType(),
+                                                noteLink.context()));
                         }
                 }
         }

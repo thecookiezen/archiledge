@@ -1,5 +1,6 @@
 package com.thecookiezen.archiledger.application.service;
 
+import com.thecookiezen.archiledger.domain.model.LinkDefinition;
 import com.thecookiezen.archiledger.domain.model.MemoryNote;
 import com.thecookiezen.archiledger.domain.model.MemoryNoteId;
 import com.thecookiezen.archiledger.domain.model.SimilarityResult;
@@ -99,10 +100,11 @@ class MemoryNoteServiceImplTest {
     void addLink_delegatesToRepository() {
         MemoryNoteId from = new MemoryNoteId("A");
         MemoryNoteId to = new MemoryNoteId("B");
+        LinkDefinition link = new LinkDefinition(from, to, "DEPENDS_ON", "A depends on B for core functionality");
 
-        service.addLink(from, to, "DEPENDS_ON");
+        service.addLink(link);
 
-        verify(repository).addLink(from, to, "DEPENDS_ON");
+        verify(repository).addLink(link);
     }
 
     @Test
