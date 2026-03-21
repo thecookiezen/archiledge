@@ -40,4 +40,6 @@ public interface MemoryNoteService {
     Map<String, Object> readGraph();
 
     List<SimilarityResult<MemoryNote>> similaritySearch(String query);
+
+    List<SimilarityResult<MemoryNote>> similaritySearch(String query, int topK, double threshold, double temperature);
 }

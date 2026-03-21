@@ -180,11 +180,28 @@ public class LadybugMemoryNoteRepository implements MemoryNoteRepository {
 
     @Override
     public List<SimilarityResult<MemoryNote>> findSimilar(float[] queryEmbedding, int topK) {
+        return findSimilar(queryEmbedding, topK, 0.0, 0.0);
+    }
+
+    @Override
+    public List<SimilarityResult<MemoryNote>> findSimilar(float[] queryEmbedding, int topK, double threshold, double temperature) {
         return dbRepository.findSimilarRaw(queryEmbedding, topK).stream()
-                .map(projection -> new SimilarityResult<>(
-                        toDomainNoteWithLinks(projection.note(), projection.note().getId()),
-                        projection.score()))
+                .map(projection -> {
+                    double distance = projection.score();
+                    double score = applyTemperatureScaling(distance, temperature);
+                    return new SimilarityResult<>(
+                            toDomainNoteWithLinks(projection.note(), projection.note().getId()),
+                            score);
+                })
+                .filter(result -> result.score() >= threshold)
                 .toList();
+    }
+
+    private double applyTemperatureScaling(double distance, double temperature) {
+        if (temperature <= 0.0) {
+            return 1.0 - distance;
+        }
+        return Math.exp(-distance / temperature);
     }
 
     private MemoryNote toDomainNote(LadybugMemoryNote note) {

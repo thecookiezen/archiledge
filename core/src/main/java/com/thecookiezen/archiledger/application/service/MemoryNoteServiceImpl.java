@@ -110,4 +110,10 @@ class MemoryNoteServiceImpl implements MemoryNoteService {
         float[] queryEmbedding = embeddingsService.embed(query);
         return repository.findSimilar(queryEmbedding, 10);
     }
+
+    @Override
+    public List<SimilarityResult<MemoryNote>> similaritySearch(String query, int topK, double threshold, double temperature) {
+        float[] queryEmbedding = embeddingsService.embed(query);
+        return repository.findSimilar(queryEmbedding, topK, threshold, temperature);
+    }
 }

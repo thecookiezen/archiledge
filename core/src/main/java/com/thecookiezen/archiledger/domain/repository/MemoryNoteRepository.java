@@ -41,4 +41,6 @@ public interface MemoryNoteRepository {
     void incrementRetrievalCount(MemoryNoteId id);
 
     List<SimilarityResult<MemoryNote>> findSimilar(float[] queryEmbedding, int topK);
+
+    List<SimilarityResult<MemoryNote>> findSimilar(float[] queryEmbedding, int topK, double threshold, double temperature);
 }

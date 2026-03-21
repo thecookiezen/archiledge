@@ -201,4 +201,29 @@ class MemoryNoteServiceImplTest {
         verify(embeddingsService).embed("architecture");
         verify(repository).findSimilar(queryEmbedding, 10);
     }
+
+    @Test
+    void similaritySearch_higherScoreMeansBetterMatch() {
+        float[] queryEmbedding = new float[] { 0.5f, 0.5f };
+        MemoryNote closeMatch = sampleNote("close-match");
+        MemoryNote farMatch = sampleNote("far-match");
+        MemoryNote mediumMatch = sampleNote("medium-match");
+
+        when(embeddingsService.embed("query")).thenReturn(queryEmbedding);
+        when(repository.findSimilar(queryEmbedding, 10))
+                .thenReturn(List.of(
+                        new SimilarityResult<>(closeMatch, 0.95),
+                        new SimilarityResult<>(mediumMatch, 0.50),
+                        new SimilarityResult<>(farMatch, 0.10)));
+
+        List<SimilarityResult<MemoryNote>> results = service.similaritySearch("query");
+
+        assertEquals(3, results.size());
+        assertTrue(results.get(0).score() > results.get(1).score(),
+                "Close match should have higher score than medium match");
+        assertTrue(results.get(1).score() > results.get(2).score(),
+                "Medium match should have higher score than far match");
+        assertEquals("close-match", results.get(0).item().id().value());
+        assertEquals("far-match", results.get(2).item().id().value());
+    }
 }
