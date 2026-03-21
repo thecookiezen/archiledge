@@ -38,13 +38,13 @@ The Zettelkasten model is powerful because each note is atomic, self-contained, 
     - `get_notes_by_tag`: Find all notes with a given tag (e.g., `architecture`, `decision`, `bug`).
     - `delete_notes`: Delete notes by their IDs, including associated links and embeddings.
   - **Link Management**:
-    - `add_links`: Add typed links between notes (e.g., `DEPENDS_ON`, `RELATED_TO`, `CONTRADICTS`).
+    - `add_links`: Add typed links between notes with context (e.g., `DEPENDS_ON`, `RELATED_TO`, `CONTRADICTS`). Each link requires a context explaining the relationship.
     - `delete_links`: Remove typed links between notes.
   - **Graph Exploration**:
     - `read_graph`: Read the entire knowledge graph. Returns all notes and their links.
     - `get_linked_notes`: Find all notes directly connected to a given note.
     - `get_all_tags`: List all unique tags currently used across notes.
-    - `search_notes`: Semantic similarity search across all note content using vector embeddings.
+    - `search_notes`: Semantic similarity search across all note content using vector embeddings. Supports temperature scaling and threshold filtering for fine-tuned results.
 
 ## Known Limitations & Performance Characteristics
 
@@ -80,7 +80,17 @@ Based on load testing with 512MB heap:
     - Note: Generating embeddings from text is always handled by **Spring AI's ONNX Model** (downloading a local embedding model like `all-minilm-l6-v2` to process text into float arrays).
     - `LadybugEmbeddingsService`: Uses LadybugDB's native vector extension — arrays stored efficiently on disk and indexed with HNSW for ultra-fast approximate nearest neighbor matching.
     - `LadybugVectorExtensionInitializer`: Installs/loads the vector extension and creates the HNSW index.
-  - **MCP**: Acts as the primary adapter, exposing memory tools via the `McpToolAdapter`.
+   - **MCP**: Acts as the primary adapter, exposing memory tools via the `McpToolAdapter`.
+
+### Agentic Memory Module
+
+The `agentic-memory` module provides AI-driven memory evolution capabilities:
+
+- **AgenticMemoryAgent**: Analyzes notes and suggests new links based on semantic relationships
+- **Context-Aware Links**: Automatically evaluates whether to add, update, or remove links between notes
+- **Evolution Prompts**: Uses Jinja templates for content analysis and evolution evaluation
+
+This module enables the knowledge graph to evolve autonomously as new information is added, maintaining a rich network of contextually relevant connections.
 
 ## Prerequisites
 
@@ -255,7 +265,7 @@ When storing information:
 2. Write focused content (one idea per note — the Zettelkasten atomicity principle)
 3. Add relevant keywords for search
 4. Set appropriate tags for categorization
-5. Link to related notes using typed links
+5. Link to related notes using typed links with context explaining the relationship
 
 ### Recalling Notes
 At the start of each conversation:
@@ -265,13 +275,15 @@ At the start of each conversation:
 4. Reference stored decisions and preferences in your responses
 
 ### Linking Notes
-Link related notes for better context using typed links:
+Link related notes for better context using typed links with context:
 - `RELATES_TO` - General relationship
 - `DEPENDS_ON` - Dependency relationship
 - `AFFECTS` - One thing impacts another
 - `PART_OF` - Component/container relationship
 - `SUPERSEDES` - Replaces previous decision/approach
 - `CONTRADICTS` - Conflicts with another note
+
+> **Note:** Each link requires a `context` field explaining why the relationship exists.
 ```
 
 ---
@@ -346,7 +358,7 @@ Use the graph for code investigation:
 2. **Include file paths** in content or keywords for easy navigation
 3. **Document "why"** not just "what" — capture design rationale
 4. **Update incrementally** — add notes as you explore
-5. **Link generously** — typed links are what make the graph valuable
+5. **Link with context** — typed links with explanatory context make the graph truly valuable
 ```
 
 ---
