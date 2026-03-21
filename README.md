@@ -4,7 +4,7 @@
 
 Archiledger is a specialized **Knowledge Graph** that serves as a **RAG (Retrieval-Augmented Generation)** system, equipped with a naive **vector search** implementation. It is exposed as a [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server to enable LLM-based assistants to store, connect, and recall information using a graph database. Whether you need a personal memory bank that persists across conversations or want to analyze codebases and documents into structured knowledge graphs, Archiledger provides the infrastructure to make your AI truly remember.
 
-> **⚠️ Disclaimer:** This server currently implements **no authentication** mechanisms. Additionally, it relies on an **embedded graph database** (or in-memory storage) which is designed and optimized for **local development and testing environments only**. It is **not recommended for production use** in its current state.
+> **⚠️ Disclaimer:** This server currently implements **no authentication** mechanisms. Additionally, it relies on an **embedded graph database** which is designed and optimized for **local development and testing environments only**. It is **not recommended for production use** in its current state.
 
 ## Why Archiledger?
 
@@ -75,8 +75,7 @@ Based on load testing with 512MB heap:
 - **Application Layer**: Orchestrates the domain logic using services (`MemoryNoteService`). Handles retrieval count tracking and embedding generation.
 - **Infrastructure Layer**:
   - **Persistence**:
-    - `InMemoryMemoryNoteRepository`: Thread-safe in-memory implementation (default profile).
-    - `LadybugMemoryNoteRepository`: LadybugDB graph database implementation (activates with `ladybugdb` profile). Notes are stored as graph nodes, links as `LINKED_TO` relationships.
+    - `LadybugMemoryNoteRepository`: LadybugDB graph database implementation. Notes are stored as graph nodes, links as `LINKED_TO` relationships. Can run in-memory (transient) or persistent mode.
   - **Vector Search / Storage**:
     - Note: Generating embeddings from text is always handled by **Spring AI's ONNX Model** (downloading a local embedding model like `all-minilm-l6-v2` to process text into float arrays).
     - `LadybugEmbeddingsService`: Uses LadybugDB's native vector extension — arrays stored efficiently on disk and indexed with HNSW for ultra-fast approximate nearest neighbor matching.
@@ -98,24 +97,16 @@ mvn clean package
 
 The server uses streamable HTTP transport by default on port **8080**.
 
-### Default (In-Memory)
+### Transient (In-Memory)
+Data is lost on restart.
 ```bash
 java -jar mcp/target/archiledger-server-0.0.1-SNAPSHOT.jar
 ```
 
-### With LadybugDB (Embedded)
-This mode runs LadybugDB inside the application process.
-
-**Transient (Data lost on restart):**
-```bash
-java -Dspring.profiles.active=ladybugdb -jar mcp/target/archiledger-server-0.0.1-SNAPSHOT.jar
-```
-
-**Persistent (Data saved to file):**
+### Persistent (Data saved to file)
 Set the `ladybugdb.data-dir` property to a directory path.
 ```bash
-java -Dspring.profiles.active=ladybugdb \
-     -Dladybugdb.data-dir=./ladybugdb-data \
+java -Dladybugdb.data-dir=./ladybugdb-data \
      -jar mcp/target/archiledger-server-0.0.1-SNAPSHOT.jar
 ```
 

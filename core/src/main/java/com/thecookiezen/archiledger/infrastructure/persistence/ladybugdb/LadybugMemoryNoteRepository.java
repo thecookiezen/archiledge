@@ -10,7 +10,6 @@ import com.thecookiezen.archiledger.infrastructure.persistence.ladybugdb.model.L
 import com.thecookiezen.archiledger.infrastructure.persistence.ladybugdb.model.LinkProjection;
 import com.thecookiezen.ladybugdb.spring.core.LadybugDBTemplate;
 
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -21,7 +20,6 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 @Repository
-@Profile("ladybugdb")
 public class LadybugMemoryNoteRepository implements MemoryNoteRepository {
 
     private final MemoryNoteDbRepository dbRepository;

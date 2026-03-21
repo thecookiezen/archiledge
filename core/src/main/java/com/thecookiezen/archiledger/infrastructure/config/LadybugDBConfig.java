@@ -6,6 +6,7 @@ import com.thecookiezen.archiledger.domain.model.MemoryNoteId;
 import com.thecookiezen.archiledger.infrastructure.persistence.ladybugdb.model.LadybugMemoryNote;
 import com.thecookiezen.archiledger.infrastructure.persistence.ladybugdb.model.LadybugNoteLink;
 import com.thecookiezen.archiledger.infrastructure.persistence.ladybugdb.model.LinkProjection;
+import com.thecookiezen.archiledger.infrastructure.persistence.ladybugdb.model.SimilarityResultProjection;
 import com.thecookiezen.ladybugdb.spring.config.EnableLadybugDBRepositories;
 import com.thecookiezen.ladybugdb.spring.connection.LadybugDBConnectionFactory;
 import com.thecookiezen.ladybugdb.spring.connection.PooledConnectionFactory;
@@ -26,12 +27,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 @Configuration
-@Profile("ladybugdb")
 @EnableTransactionManagement
 @EnableLadybugDBRepositories(basePackages = "com.thecookiezen.archiledger.infrastructure.persistence.ladybugdb")
 public class LadybugDBConfig {
@@ -130,6 +129,7 @@ public class LadybugDBConfig {
         registry.registerDescriptor(LadybugMemoryNote.class, memoryNoteReader(), memoryNoteWriter());
         registry.registerDescriptor(LadybugNoteLink.class, noteLinkReader(), noteLinkWriter());
         registry.registerDescriptor(LinkProjection.class, linkProjectionReader(), entity -> Map.of());
+        registry.registerDescriptor(SimilarityResultProjection.class, similarityResultProjectionReader(memoryNoteReader()), entity -> Map.of());
         registry.registerDescriptor(MemoryNoteId.class, memoryNoteIdReader(), entity -> Map.of());
         return registry;
     }
@@ -202,5 +202,13 @@ public class LadybugDBConfig {
                 ValueMappers.asString(row.getValue("fromId")),
                 ValueMappers.asString(row.getValue("toId")),
                 ValueMappers.asString(row.getValue("relationType")));
+    }
+
+    private RowMapper<SimilarityResultProjection> similarityResultProjectionReader(RowMapper<LadybugMemoryNote> noteReader) {
+        return row -> {
+            LadybugMemoryNote note = noteReader.mapRow(row);
+            Double score = ValueMappers.asDouble(row.getValue("score"));
+            return new SimilarityResultProjection(note, score != null ? score : 0.0);
+        };
     }
 }

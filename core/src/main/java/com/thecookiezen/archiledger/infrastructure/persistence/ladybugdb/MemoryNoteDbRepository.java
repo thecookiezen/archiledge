@@ -36,7 +36,7 @@ public interface MemoryNoteDbRepository
         @Query("MATCH (source:MemoryNote)-[r:LINKED_TO]->(target:MemoryNote) RETURN source.id AS fromId, target.id AS toId, r.relationType AS relationType")
         List<LinkProjection> findAllLinks();
 
-        @Query(value = "CALL QUERY_VECTOR_INDEX('NoteEmbedding', 'note_embedding_idx', $queryVector, $limit) YIELD node, distance MATCH (n:MemoryNote)-[:HAS_EMBEDDING]->(node) RETURN n AS note, distance AS score ORDER BY distance", loadExtensions = {
+        @Query(value = "CALL QUERY_VECTOR_INDEX('NoteEmbedding', 'note_embedding_idx', $queryVector, $limit) YIELD node, distance MATCH (n:MemoryNote)-[:HAS_EMBEDDING]->(node) RETURN n, distance AS score ORDER BY distance", loadExtensions = {
                         "vector" })
         List<SimilarityResultProjection> findSimilarRaw(float[] queryVector, long limit);
 
