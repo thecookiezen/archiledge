@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.thecookiezen</groupId>
+        <artifactId>archiledger-parent</artifactId>
+        <version>${revision}</version>
+    </parent>
+    <artifactId>archiledger-agentic-memory</artifactId>
+    <name>archiledger-agentic-memory</name>
+    <description>Agentic memory system with automatic content analysis, link generation with context, and memory evolution</description>
+    <packaging>jar</packaging>
+    
+    <properties>
+        <embabel-agent.version>0.3.5-SNAPSHOT</embabel-agent.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.thecookiezen</groupId>
+            <artifactId>archiledger-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.embabel.agent</groupId>
+            <artifactId>embabel-agent-rag-core</artifactId>
+            <version>${embabel-agent.version}</version>
+        </dependency>
+    </dependencies>
+</project>

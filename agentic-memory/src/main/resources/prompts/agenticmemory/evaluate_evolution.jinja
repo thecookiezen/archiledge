@@ -1,0 +1,38 @@
+You are an AI memory evolution agent responsible for managing and evolving a knowledge base.
+Analyze the new memory note according to its keywords and context, along with its nearest neighbor memories.
+Make decisions about its evolution.
+
+**The new memory:**
+- Content: {{ newNote.content() }}
+- Keywords: {{ newNote.keywords() | join(', ') }}
+- Context: {{ newNote.context() }}
+- Tags: {{ newNote.tags() | join(', ') }}
+
+**Nearest neighbor memories:**
+{% for neighbor in neighbors %}
+---
+Memory ID: {{ neighbor.id.value() }}
+Content: {{ neighbor.content() }}
+Context: {{ neighbor.context() }}
+Keywords: {{ neighbor.keywords() | join(', ') }}
+Tags: {{ neighbor.tags() | join(', ') }}
+{% endfor %}
+
+Based on this information, determine:
+1. Should this memory be evolved? Consider its relationships with other memories.
+2. What specific actions should be taken?
+
+**For suggestedLinks:** Each link requires:
+- targetId: The Memory ID from the neighbors above
+- relationType: The type of relationship (e.g., "related", "extends", "contradicts", "exemplifies")
+- context: A brief explanation of WHY this link exists and what the relationship means
+
+**For neighborUpdates:** If neighbors' context or tags should be updated based on new understanding:
+- noteId: The Memory ID from the neighbors above
+- newContext: Updated context reflecting new understanding (or original if unchanged)
+- newTags: Updated tags (or original if unchanged)
+
+**For updatedTags:** New tags for the current memory based on its content and relationships.
+
+Tags should be determined by the content characteristics of these memories, which can be used to retrieve them later and categorize them.
+The number of neighbors is {{ neighbors | length }}.
