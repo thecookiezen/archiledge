@@ -20,8 +20,9 @@
 
     <modules>
         <module>core</module>
-        <module>agentic-memory</module>
         <module>mcp</module>
+        <module>agentic-memory</module>
+        <module>agentic-memory-mcp</module>
         <module>load-tests</module>
     </modules>
 
