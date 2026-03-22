@@ -1,4 +1,4 @@
-package com.thecookiezen.archiledger.infrastructure.config;
+package com.thecookiezen.archiledger.agenticmemory.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 

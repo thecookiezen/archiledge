@@ -1,4 +1,4 @@
-package com.thecookiezen.archiledger.infrastructure.config;
+package com.thecookiezen.archiledger.agenticmemory.config;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -10,10 +10,12 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 
+import com.thecookiezen.archiledger.agenticmemory.AgenticMemoryProperties;
+
 import java.util.regex.Pattern;
 
 @Configuration
-@EnableConfigurationProperties(CorsProperties.class)
+@EnableConfigurationProperties({CorsProperties.class, AgenticMemoryProperties.class})
 @ConditionalOnProperty(prefix = "cors", name = "enabled", havingValue = "true")
 public class CorsConfig {
 

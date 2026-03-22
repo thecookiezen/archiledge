@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Configuration;
 class RagConfiguration {
 
     @Bean
-    MemoryNoteSearchOperations archiledgerSearcbOperations(MemoryNoteService memoryService) {
+    MemoryNoteSearchOperations archiledgerSearchOperations(MemoryNoteService memoryService) {
         return new MemoryNoteSearchOperations(memoryService);
     }
 }
