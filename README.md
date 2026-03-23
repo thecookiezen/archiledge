@@ -6,6 +6,136 @@ Archiledger is a specialized **Knowledge Graph** that serves as a **RAG (Retriev
 
 > **⚠️ Disclaimer:** This server currently implements **no authentication** mechanisms. Additionally, it relies on an **embedded graph database** which is designed and optimized for **local development and testing environments only**. It is **not recommended for production use** in its current state.
 
+## Four Ways to Use Archiledger
+
+Archiledger provides multiple integration levels, from low-level programmatic access to high-level AI-powered memory management:
+
+```
+┌────────────────────────────────────────────────────────────────────────────┐
+│                           INTEGRATION LEVELS                               │
+├────────────────────────────────────────────────────────────────────────────┤
+│                                                                            │
+│   LOW-LEVEL (Manual Control)              HIGH-LEVEL (AI-Powered)          │
+│                                                                            │
+│   ┌──────────────────┐                    ┌──────────────────┐             │
+│   │  Core Module     │                    │ Agentic Memory   │             │
+│   │  (Maven Dep)     │                    │ (Embabel)        │             │
+│   │                  │                    │                  │             │
+│   │ MemoryNoteService│                    │ • Agent          │             │
+│   │ Direct Java API  │                    │ • RAG            │             │
+│   └────────┬─────────┘                    │  • Vector Search │             │
+│            │                              │  • Zoom Out      │             │
+│            ▼                              │  • Auto-evolution│             │
+│   ┌──────────────────┐                    └────────┬─────────┘             │
+│   │  MCP Server      │                             │                       │
+│   │  (LLM Tools)     │                             ▼                       │
+│   │                  │                    ┌──────────────────┐             │
+│   │ Exposes core     │                    │ Agentic Memory   │             │
+│   │ as MCP tools     │                    │ MCP              │             │
+│   └──────────────────┘                    │                  │             │
+│                                           │ Exposes agent    │             │
+│                                           │ and RAG as MCP   │             │
+│                                           └──────────────────┘             │
+│                                                                            │
+│   No LLM Required ◄──────────────────────► LLM Required                    │
+│                                                                            │
+└────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 1. Core Module (Maven Dependency)
+
+**Best for:** Java applications that need direct, programmatic control over memory operations without AI involvement.
+
+The `archiledger-core` module provides the low-level `MemoryNoteService` interface for creating, linking, and querying memory notes directly from your Java code.
+
+```xml
+<dependency>
+    <groupId>com.thecookiezen</groupId>
+    <artifactId>archiledger-core</artifactId>
+    <version>0.0.6</version>
+</dependency>
+```
+
+**Features:**
+- Full control over note creation and linking
+- Direct access to similarity search
+- Graph traversal operations
+- No external LLM dependency required
+
+**Use when you want to:**
+- Embed memory capabilities in your Java application
+- Have full control over how memories are structured
+- Avoid LLM costs and latency
+- Build custom memory workflows
+
+### 2. MCP Server (Low-Level Tools)
+
+**Best for:** LLM-based assistants that need direct access to memory operations with full control.
+
+The `mcp` module exposes all core `MemoryNoteService` operations as MCP tools. The LLM decides how to create notes, add tags, and establish links.
+
+**MCP Tools Available:**
+- **Note Management:** `create_notes`, `get_note`, `get_notes_by_tag`, `delete_notes`
+- **Link Management:** `add_links`, `delete_links`
+- **Graph Exploration:** `read_graph`, `get_linked_notes`, `get_all_tags`, `search_notes`
+
+**Use when you want to:**
+- Let the LLM manage memory structure autonomously
+- Have fine-grained control via prompts
+- Build custom memory behaviors through instructions
+
+### 3. Agentic Memory (Embabel Module)
+
+**Best for:** Java applications that want AI-powered memory management with automatic classification and evolution.
+
+The `agentic-memory` module provides a higher-level abstraction built on the [Embabel framework](https://github.com/embabel/embabel). It includes an AI agent that automatically analyzes content, generates keywords/tags, and evolves the knowledge graph.
+
+**Features:**
+- **AgenticMemoryAgent:** Automatically analyzes content and suggests classifications
+- **Vector Search:** Semantic similarity search across memory notes
+- **Zoom Out Search:** Traverse upward in the knowledge graph to find related context
+- **Memory Evolution:** AI evaluates whether new memories should link to existing ones
+- **RAG Integration:** Built-in retrieval-augmented generation support
+
+**Use when you want to:**
+- Let AI automatically classify and tag memories
+- Have the knowledge graph evolve autonomously
+- Use semantic search capabilities
+- Integrate with Embabel agent workflows
+
+### 4. Agentic Memory MCP
+
+**Best for:** LLM-based assistants that want AI-powered memory with minimal manual management.
+
+The `agentic-memory-mcp` module exposes the agentic memory capabilities as MCP tools. The AI handles classification, tagging, and linking automatically.
+
+**MCP Tools Available:**
+- `memory_vector_search`: Semantic similarity search across memories
+- `memory_broaden_search`: Expand from a note to find connected memories
+- `memory_zoom_out`: Traverse upward in the knowledge graph
+- `agentic_memory_write`: Store content with automatic AI classification and evolution
+
+**Use when you want to:**
+- Let AI handle all memory organization
+- Focus on storing and retrieving, not structuring
+- Have automatic knowledge graph evolution
+
+---
+
+## Choosing the Right Approach
+
+| Requirement | Recommended Approach |
+|-------------|---------------------|
+| No LLM available, pure Java | Core Module (Maven) |
+| LLM should control everything manually | MCP Server |
+| Want AI classification in Java app | Agentic Memory (Embabel) |
+| LLM with automatic memory management | Agentic Memory MCP |
+| Need full control over tags/links | Core Module or MCP Server |
+| Want automatic knowledge evolution | Agentic Memory (either) |
+| Minimal setup for AI assistant | Agentic Memory MCP |
+
+---
+
 ## Why Archiledger?
 
 LLMs are powerful, but they forget everything the moment a conversation ends. This creates frustrating experiences:
@@ -30,21 +160,34 @@ The Zettelkasten model is powerful because each note is atomic, self-contained, 
 
 ## Features
 
+### Core Features (All Modules)
+
 - **Knowledge Graph**: Atomic MemoryNotes connected by typed links.
-- **MCP Tools**:
-  - **Note Management**:
-    - `create_notes`: Create one or more memory notes with content, keywords, tags, and optional links.
-    - `get_note`: Retrieve a specific note by ID. Increments the retrieval counter for relevance tracking.
-    - `get_notes_by_tag`: Find all notes with a given tag (e.g., `architecture`, `decision`, `bug`).
-    - `delete_notes`: Delete notes by their IDs, including associated links and embeddings.
-  - **Link Management**:
-    - `add_links`: Add typed links between notes with context (e.g., `DEPENDS_ON`, `RELATED_TO`, `CONTRADICTS`). Each link requires a context explaining the relationship.
-    - `delete_links`: Remove typed links between notes.
-  - **Graph Exploration**:
-    - `read_graph`: Read the entire knowledge graph. Returns all notes and their links.
-    - `get_linked_notes`: Find all notes directly connected to a given note.
-    - `get_all_tags`: List all unique tags currently used across notes.
-    - `search_notes`: Semantic similarity search across all note content using vector embeddings. Supports temperature scaling and threshold filtering for fine-tuned results.
+- **Vector Search**: Semantic similarity search using embeddings
+- **Graph Traversal**: Navigate relationships between notes
+
+### Low-Level MCP Tools
+
+- **Note Management**:
+  - `create_notes`: Create one or more memory notes with content, keywords, tags, and optional links.
+  - `get_note`: Retrieve a specific note by ID. Increments the retrieval counter for relevance tracking.
+  - `get_notes_by_tag`: Find all notes with a given tag (e.g., `architecture`, `decision`, `bug`).
+  - `delete_notes`: Delete notes by their IDs, including associated links and embeddings.
+- **Link Management**:
+  - `add_links`: Add typed links between notes with context (e.g., `DEPENDS_ON`, `RELATED_TO`, `CONTRADICTS`). Each link requires a context explaining the relationship.
+  - `delete_links`: Remove typed links between notes.
+- **Graph Exploration**:
+  - `read_graph`: Read the entire knowledge graph. Returns all notes and their links.
+  - `get_linked_notes`: Find all notes directly connected to a given note.
+  - `get_all_tags`: List all unique tags currently used across notes.
+  - `search_notes`: Semantic similarity search across all note content using vector embeddings. Supports temperature scaling and threshold filtering for fine-tuned results.
+
+### Agentic Memory MCP Tools
+
+- `memory_vector_search`: Perform semantic similarity search across memory notes
+- `memory_broaden_search`: Given a note ID, expand to find connected/linked notes
+- `memory_zoom_out`: Traverse upward in the knowledge graph to find parent/related notes
+- `agentic_memory_write`: Store content with automatic AI classification, tagging, and link generation
 
 ## Known Limitations & Performance Characteristics
 
@@ -89,6 +232,7 @@ The `agentic-memory` module provides AI-driven memory evolution capabilities:
 - **AgenticMemoryAgent**: Analyzes notes and suggests new links based on semantic relationships
 - **Context-Aware Links**: Automatically evaluates whether to add, update, or remove links between notes
 - **Evolution Prompts**: Uses Jinja templates for content analysis and evolution evaluation
+- **MemoryNoteSearchOperations**: Implements RAG interfaces for vector search and result expansion
 
 This module enables the knowledge graph to evolve autonomously as new information is added, maintaining a rich network of contextually relevant connections.
 
@@ -103,21 +247,42 @@ This module enables the knowledge graph to evolve autonomously as new informatio
 mvn clean package
 ```
 
+This builds all modules:
+- `core/target/archiledger-core-*.jar` - Core library
+- `mcp/target/archiledger-server-*.jar` - Low-level MCP server
+- `agentic-memory/target/agentic-memory-*.jar` - Agentic memory library
+- `agentic-memory-mcp/target/agentic-memory-mcp-*.jar` - Agentic memory MCP server
+
 ## Running
+
+### Low-Level MCP Server
 
 The server uses streamable HTTP transport by default on port **8080**.
 
-### Transient (In-Memory)
-Data is lost on restart.
+**Transient (In-Memory)** - Data is lost on restart:
 ```bash
-java -jar mcp/target/archiledger-server-0.0.1-SNAPSHOT.jar
+java -jar mcp/target/archiledger-server-1.0.0-SNAPSHOT.jar
 ```
 
-### Persistent (Data saved to file)
-Set the `ladybugdb.data-dir` property to a directory path.
+**Persistent** - Data saved to file:
 ```bash
 java -Dladybugdb.data-dir=./ladybugdb-data \
-     -jar mcp/target/archiledger-server-0.0.1-SNAPSHOT.jar
+     -jar mcp/target/archiledger-server-1.0.0-SNAPSHOT.jar
+```
+
+### Agentic Memory MCP Server
+
+The agentic memory MCP server requires an LLM configuration for the AI-powered features.
+
+**Transient (In-Memory):**
+```bash
+java -jar agentic-memory-mcp/target/agentic-memory-mcp-1.0.0-SNAPSHOT.jar
+```
+
+**Persistent:**
+```bash
+java -Dladybugdb.data-dir=./ladybugdb-data \
+     -jar agentic-memory-mcp/target/agentic-memory-mcp-1.0.0-SNAPSHOT.jar
 ```
 
 > **💡 Tip: Viewing the Graph with Ladybug BugScope**
