@@ -232,6 +232,49 @@ docker run -p 8080:8080 \
 
 > **Note:** The data directory must be writable by UID 100 (`spring` user).
 
+### Running Agentic Memory MCP with Docker
+
+The agentic-memory-mcp server requires LLM configuration for AI-powered features.
+
+**Transient (Data lost when container stops):**
+```bash
+docker run -p 8080:8080 \
+  -e OPENAI_CUSTOM_BASE_URL=https://api.example.com \
+  -e OPENAI_CUSTOM_MODELS=model-name \
+  -e OPENAI_CUSTOM_API_KEY=your_api_key \
+  registry.hub.docker.com/thecookiezen/archiledger-agentic-memory-mcp:latest
+```
+
+**Persistent (Data saved to host filesystem):**
+```bash
+docker run -p 8080:8080 \
+  -v /path/to/local/ladybugdb-data:/data/ladybugdb \
+  -e OPENAI_CUSTOM_BASE_URL=https://api.example.com \
+  -e OPENAI_CUSTOM_MODELS=model-name \
+  -e OPENAI_CUSTOM_API_KEY=your_api_key \
+  registry.hub.docker.com/thecookiezen/archiledger-agentic-memory-mcp:latest
+```
+
+#### LLM Configuration Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `OPENAI_CUSTOM_BASE_URL` | Base URL for the OpenAI-compatible API |
+| `OPENAI_CUSTOM_MODELS` | Model name to use |
+| `OPENAI_CUSTOM_API_KEY` | API key for authentication |
+| `OPENAI_CUSTOM_COMPLETIONS_PATH` | Optional: Custom completions endpoint path (default: `/v1/chat/completions`) |
+
+#### Agentic Memory Docker Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `LADYBUGDB_DATA_DIR` | `/data/ladybugdb` | Directory where LadybugDB stores data |
+| `INITIAL_MEMORY` | `256m` | JVM initial heap size |
+| `MAX_MEMORY` | `512m` | JVM maximum heap size |
+| `MAX_RAM_PERCENTAGE` | `75.0` | JVM max RAM percentage |
+
+> **Note:** The data directory must be writable by UID 100 (`spring` user).
+
 ### Visualizing the Graph
 
 Use [Ladybug BugScope](https://github.com/LadybugDB/bugscope) to visualize your graph:

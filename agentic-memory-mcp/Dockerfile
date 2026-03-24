@@ -8,6 +8,11 @@ ENV LADYBUGDB_DATA_DIR=/data/ladybugdb
 ENV INITIAL_MEMORY=256m
 ENV MAX_MEMORY=512m
 ENV MAX_RAM_PERCENTAGE=75.0
+# LLM Configuration (must be overridden at runtime)
+ENV OPENAI_CUSTOM_BASE_URL=""
+ENV OPENAI_CUSTOM_MODELS=""
+ENV OPENAI_CUSTOM_API_KEY=""
+ENV OPENAI_CUSTOM_COMPLETIONS_PATH="/v1/chat/completions"
 
 RUN addgroup -S spring && adduser -S spring -G spring
 
@@ -16,7 +21,7 @@ RUN mkdir -p /data/ladybugdb && chown -R spring:spring /data
 
 USER spring:spring
 
-COPY mcp/target/*.jar app.jar
+COPY agentic-memory-mcp/target/*.jar app.jar
 
 # HTTP server port
 EXPOSE 8080
