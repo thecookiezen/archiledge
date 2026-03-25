@@ -18,6 +18,7 @@
         <module>agentic-memory</module>
         <module>agentic-memory-mcp</module>
         <module>load-tests</module>
+        <module>docs</module>
     </modules>
 
     <properties>

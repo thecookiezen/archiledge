@@ -1,0 +1,190 @@
+[[why-archiledger]]
+=== Why Archiledger?
+
+LLMs are powerful, but they forget everything when a conversation ends:
+
+* **Repeating yourself** - Telling your assistant the same preferences over and over
+* **Lost insights** - Valuable analysis from one session isn't available in the next
+* **No connected thinking** - Information lives in silos without relationships
+* **Manual categorization** - You must tag and organize everything yourself
+
+Archiledger solves this with a **graph-based memory** powered by **agentic RAG**:
+
+[cols="1,1"]
+|===
+| Problem | Solution
+
+| Context resets every conversation
+| Persistent notes that survive restarts
+
+| Flat, disconnected notes
+| Typed links between atomic notes (Zettelkasten)
+
+| Manual categorization burden
+| AI-powered automatic classification
+
+| No temporal awareness
+| ISO-8601 timestamps on every note
+
+| Keyword search limits
+| Vector search finds semantically similar notes
+
+| Hard to explore large graphs
+| Graph traversal via `LINKED_TO` relationships
+
+| Static knowledge graphs
+| Memory evolution through agent evaluation
+|===
+
+==== Why Agentic Memory?
+
+Standard memory systems face several challenges when storing and retrieving information:
+
+[cols="1,2"]
+|===
+| Challenge | Example
+
+| Ambiguity
+| "How do I handle taxes?" - personal vs business context unclear
+
+| Scattered evidence
+| Remote work policy for contractors spans HR docs and contractor agreements
+
+| Static categorization
+| Tags and categories become stale as knowledge evolves
+
+| No self-correction
+| System accepts similarity scores without evaluation
+|===
+
+Agentic memory addresses these through an agent-based control loop that analyzes, evaluates, and evolves the knowledge graph.
+
+==== Agentic Memory: Automatic Classification
+
+The key differentiator is the **Agentic Memory** module, which uses an AI agent to:
+
+. **Analyze content** - Extract keywords, context, and tags automatically
+. **Find relationships** - Search for semantically similar existing memories
+. **Evaluate evolution** - Decide whether to link, update, or create new notes
+. **Self-correct** - Assess classification quality and refine when needed
+
+This eliminates the burden of manual categorization while maintaining a rich, connected knowledge graph.
+
+==== How It Works
+
+The `AgenticMemoryAgent` implements a multi-step pipeline for content classification:
+
+[ditaa, target=agentic-pipeline, format=svg]
+....
++-------------+     +------------------+     +-----------------+     +-------------+
+|   Content   | --> |   Analyze        | --> |   Evaluate      | --> |   Store     |
+|   Input     |     |   Content        |     |   Evolution     |     |   Memory    |
++-------------+     +------------------+     +-----------------+     +-------------+
+                           |                        |
+                           v                        v
+                    +-------------+          +-------------+
+                    |  Keywords   |          |  Similar    |
+                    |  Context    |          |  Neighbors  |
+                    |  Tags       |          |  (RAG)      |
+                    +-------------+          +-------------+
+....
+
+===== Step 1: Content Analysis
+
+The agent analyzes incoming content to extract structured metadata:
+
+* **Keywords**: Salient nouns, verbs, and key concepts ordered by importance
+* **Context**: Single sentence summarizing topic, arguments, and purpose
+* **Tags**: Broad categories for classification (domain, format, type)
+
+===== Step 2: Evolution Evaluation
+
+The agent uses RAG to find similar existing memories and evaluates relationships:
+
+* Searches for semantically similar notes in the knowledge graph
+* Compares new content with neighbors to identify relationships
+* Decides whether to create links, update tags, or modify existing notes
+
+===== Step 3: Memory Storage
+
+Based on the evolution decision, the agent:
+
+* Creates the new note with extracted metadata
+* Establishes typed links to related notes with context
+* Optionally updates neighbor notes with new context or tags
+
+==== Trade-offs
+
+[WARNING]
+====
+Agentic memory introduces trade-offs compared to manual note management:
+
+* **Latency**: Each agent decision involves LLM calls. Classification may take 2-5 seconds per note.
+* **Cost**: Token consumption per write operation. Factor this into high-volume scenarios.
+* **Variability**: The agent may make different decisions based on context. Results are not always deterministic.
+* **Evaluator Quality**: Self-evaluation depends on LLM's ability to judge relevance accurately.
+====
+
+Use agentic memory when:
+
+* You want automatic content classification
+* Your knowledge graph needs to evolve over time
+* Manual tagging doesn't scale
+
+Use the core module when:
+
+* You need deterministic, predictable behavior
+* Latency is critical
+* You want full control over classification
+
+
+==== Four Ways to Use Archiledger
+
+[ditaa, target=usage-diagram, format=svg]
+....
+                    LOW-LEVEL (Manual Control)              HIGH-LEVEL (AI-Powered)
+
+    +-------------------------+                    +-------------------------+
+    |      Core Module        |                    |    Agentic Memory       |
+    |      (Maven Dep)        |                    |      (Embabel)          |
+    |                         |                    |                         |
+    |  MemoryNoteService      |                    |  * Agent                |
+    |  Direct Java API        |                    |  * RAG / Vector         |
+    +-----------+-------------+                    |  * Auto-evolution       |
+                |                                  +-----------+-------------+
+                v                                              v
+    +-------------------------+                    +-------------------------+
+    |      MCP Server         |                    |  Agentic Memory         |
+    |      (LLM Tools)        |                    |      MCP                |
+    +-------------------------+                    +-------------------------+
+
+    No LLM Required <--------------------------------> LLM Required
+....
+
+==== Quick Decision Guide
+
+[cols="2,2"]
+|===
+| Requirement | Recommended Approach
+
+| Pure Java, no LLM
+| Core Module (Maven)
+
+| LLM with full manual control
+| MCP Server
+
+| AI classification in Java app
+| Agentic Memory (Embabel)
+
+| LLM with automatic memory management
+| Agentic Memory MCP
+
+| Full control over tags/links
+| Core Module or MCP Server
+
+| Automatic knowledge evolution
+| Agentic Memory (either)
+
+| Minimal latency, deterministic behavior
+| Core Module or MCP Server
+|===

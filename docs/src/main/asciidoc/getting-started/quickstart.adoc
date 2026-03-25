@@ -1,0 +1,52 @@
+[[quickstart]]
+=== Quick Start
+
+This guide will get you started with Archiledger in 5 minutes.
+
+==== Using the Core Module (Java API)
+
+Create a `MemoryNoteService` and start creating notes:
+
+[source,java]
+----
+import com.thecookiezen.archiledger.application.service.MemoryNoteService;
+import com.thecookiezen.archiledger.application.service.MemoryNoteServiceImpl;
+import com.thecookiezen.archiledger.domain.model.MemoryNote;
+import com.thecookiezen.archiledger.domain.model.MemoryNoteId;
+
+// Create the service (requires repository configuration)
+MemoryNoteService service = new MemoryNoteServiceImpl(repository);
+
+// Create a note
+MemoryNote note = new MemoryNote(
+    new MemoryNoteId("my-first-note"),
+    "This is my first memory note",
+    Set.of("example", "getting-started"),
+    Set.of("memory", "note")
+);
+
+MemoryNote saved = service.createNote(note);
+
+// Retrieve the note
+Optional<MemoryNote> retrieved = service.getNote(saved.getId());
+
+// Search for similar notes
+List<SimilarityResult<MemoryNote>> results = service.similaritySearch("memory note");
+----
+
+==== Using the MCP Server
+
+Start the MCP server:
+
+[source,bash]
+----
+# Transient (in-memory)
+java -jar mcp/target/archiledger-server-1.0.0-SNAPSHOT.jar
+
+# Persistent
+java -Dladybugdb.data-dir=./ladybugdb-data \
+     -jar mcp/target/archiledger-server-1.0.0-SNAPSHOT.jar
+----
+
+The server runs on port **8080** with the MCP endpoint at `http://localhost:8080/mcp`.
+

@@ -1,0 +1,88 @@
+[[mcp-tools]]
+=== MCP Tools Reference
+
+==== Low-Level MCP Tools
+
+===== Note Management
+
+[cols="1,3,1"]
+|===
+| Tool | Description | Parameters
+
+| `create_notes`
+| Create one or more memory notes
+| `notes` (array)
+
+| `get_note`
+| Retrieve a specific note by ID
+| `id` (string)
+
+| `get_notes_by_tag`
+| Find all notes with a given tag
+| `tag` (string)
+
+| `delete_notes`
+| Delete notes by their IDs
+| `ids` (array of strings)
+|===
+
+===== Link Management
+
+[cols="1,3,1"]
+|===
+| Tool | Description | Parameters
+
+| `add_links`
+| Add typed links between notes
+| `links` (array)
+
+| `delete_links`
+| Remove typed links between notes
+| `links` (array)
+|===
+
+===== Graph Exploration
+
+[cols="1,3,1"]
+|===
+| Tool | Description | Parameters
+
+| `read_graph`
+| Read the entire knowledge graph
+| none
+
+| `get_linked_notes`
+| Find notes connected to a given note
+| `noteId` (string), optional: `relationType`, `limit`
+
+| `get_all_tags`
+| List all unique tags
+| none
+
+| `search_notes`
+| Semantic similarity search
+| `query` (string), optional: `topK`, `threshold`, `temperature`
+|===
+
+==== Agentic Memory MCP Tools
+
+[cols="1,3,1"]
+|===
+| Tool | Description | Parameters
+
+| `memory_vector_search`
+| Semantic similarity search
+| `query` (string), optional: `topK` (default: 10), `threshold` (default: 0.5)
+
+| `memory_broaden_search`
+| Expand from a note to find connected notes
+| `noteId` (string), optional: `limit` (default: 10)
+
+| `memory_zoom_out`
+| Traverse upward in the graph
+| `noteId` (string), optional: `limit` (default: 10)
+
+| `agentic_memory_write`
+| Store content with automatic classification
+| `content` (string)
+|===

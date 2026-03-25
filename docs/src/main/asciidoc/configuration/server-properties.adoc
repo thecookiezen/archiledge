@@ -1,0 +1,43 @@
+[[server-properties]]
+=== Server Properties
+
+Configure the MCP server through Spring Boot properties:
+
+[source,properties]
+----
+# MCP Server Configuration
+spring.ai.mcp.server.name=archiledger-server
+spring.ai.mcp.server.version=1.0.0
+spring.ai.mcp.server.protocol=STREAMABLE
+server.port=8080
+----
+
+==== Vector Storage
+
+[cols="2,1,2"]
+|===
+| Property | Default | Description
+
+| `ladybugdb.extension-dir`
+| `~/.lbug/extensions`
+| LadybugDB extension cache directory
+|===
+
+Embeddings are generated via Spring AI's ONNX Model (downloading `all-minilm-l6-v2`), then stored using LadybugDB's native vector extension with HNSW indexing for fast approximate nearest neighbor matching.
+
+==== Data Directory
+
+Set the data directory for persistent storage:
+
+[source,bash]
+----
+java -Dladybugdb.data-dir=./ladybugdb-data -jar archiledger-server.jar
+----
+
+Or using environment variable:
+
+[source,bash]
+----
+export LADYBUGDB_DATA_DIR=/path/to/data
+java -jar archiledger-server.jar
+----

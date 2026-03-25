@@ -1,0 +1,71 @@
+[[mcp-module]]
+=== MCP Module
+
+The MCP module exposes all core operations as MCP tools for LLM-based assistants.
+
+==== Running the Server
+
+[source,bash]
+----
+# Transient (in-memory)
+java -jar mcp/target/archiledger-server-1.0.0-SNAPSHOT.jar
+
+# Persistent
+java -Dladybugdb.data-dir=./ladybugdb-data \
+     -jar mcp/target/archiledger-server-1.0.0-SNAPSHOT.jar
+----
+
+The server uses streamable HTTP transport on port **8080**.
+
+==== Tool Categories
+
+===== Note Management
+
+[cols="1,3"]
+|===
+| Tool | Description
+
+| `create_notes`
+| Create one or more memory notes with content, keywords, tags, and optional links
+
+| `get_note`
+| Retrieve a specific note by ID (increments retrieval counter)
+
+| `get_notes_by_tag`
+| Find all notes with a given tag (e.g., `architecture`, `decision`, `bug`)
+
+| `delete_notes`
+| Delete notes by their IDs, including associated links and embeddings
+|===
+
+===== Link Management
+
+[cols="1,3"]
+|===
+| Tool | Description
+
+| `add_links`
+| Add typed links between notes with context (e.g., `DEPENDS_ON`, `RELATED_TO`, `CONTRADICTS`)
+
+| `delete_links`
+| Remove typed links between notes
+|===
+
+===== Graph Exploration
+
+[cols="1,3"]
+|===
+| Tool | Description
+
+| `read_graph`
+| Read the entire knowledge graph (all notes and links)
+
+| `get_linked_notes`
+| Find all notes directly connected to a given note
+
+| `get_all_tags`
+| List all unique tags currently used across notes
+
+| `search_notes`
+| Semantic similarity search with temperature scaling and threshold filtering
+|===

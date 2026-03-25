@@ -1,0 +1,110 @@
+[[core-module]]
+=== Core Module
+
+The core module provides direct, programmatic access to memory operations without requiring an LLM.
+
+==== Maven Dependency
+
+[source,xml]
+----
+<dependency>
+    <groupId>com.thecookiezen</groupId>
+    <artifactId>archiledger-core</artifactId>
+    <version>0.0.6</version>
+</dependency>
+----
+
+==== Creating Notes
+
+[source,java]
+----
+MemoryNote note = new MemoryNote(
+    new MemoryNoteId("architecture-decision"),
+    "Use event-driven architecture for the notification system",
+    Set.of("architecture", "decision"),
+    Set.of("event-driven", "notification", "system")
+);
+
+MemoryNote saved = service.createNote(note);
+----
+
+==== Creating Links
+
+[source,java]
+----
+LinkDefinition link = new LinkDefinition(
+    new MemoryNoteId("architecture-decision"),
+    new MemoryNoteId("notification-service"),
+    "DEPENDS_ON",
+    "The architecture decision depends on the notification service design"
+);
+
+service.addLink(link);
+----
+
+==== Similarity Search
+
+[source,java]
+----
+// Basic search
+List<SimilarityResult<MemoryNote>> results = service.similaritySearch("notification system");
+
+// Advanced search with parameters
+List<SimilarityResult<MemoryNote>> results = service.similaritySearch(
+    "notification system",  // query
+    10,                      // topK
+    0.5,                     // threshold
+    0.7                      // temperature
+);
+----
+
+==== Graph Traversal
+
+[source,java]
+----
+// Get all linked notes
+List<MemoryNote> linked = service.getLinkedNotes(new MemoryNoteId("architecture-decision"));
+
+// Get linked notes with specific relation type
+List<MemoryNote> dependencies = service.getLinkedNotes(
+    new MemoryNoteId("architecture-decision"),
+    "DEPENDS_ON",
+    10
+);
+
+// Traverse upward in the graph
+List<MemoryNote> parents = service.getNotesUpward(
+    new MemoryNoteId("notification-service"),
+    3,   // maxHops
+    20   // limit
+);
+----
+
+==== Domain Models
+
+===== MemoryNote
+
+[source,java]
+----
+public record MemoryNote(
+    MemoryNoteId id,
+    String content,
+    Set<String> tags,
+    Set<String> keywords,
+    Instant createdAt,
+    Instant updatedAt,
+    long retrievalCount
+) {}
+----
+
+===== NoteLink
+
+[source,java]
+----
+public record NoteLink(
+    MemoryNoteId from,
+    MemoryNoteId to,
+    String relationType,
+    String context
+) {}
+----

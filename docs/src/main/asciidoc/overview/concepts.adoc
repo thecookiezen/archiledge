@@ -1,0 +1,91 @@
+[[concepts]]
+=== Core Concepts
+
+==== Zettelkasten Method
+
+Archiledger implements the Zettelkasten method for knowledge management:
+
+* **Atomic Notes**: Each note contains a single idea or piece of information
+* **Links**: Notes are connected through typed relationships
+* **Tags**: Notes can be categorized with multiple tags
+* **Keywords**: Searchable terms for quick lookup
+
+==== Memory Notes
+
+A `MemoryNote` is the fundamental unit of storage:
+
+[cols="1,2"]
+|===
+| Property | Description
+
+| `id`
+| Unique identifier (MemoryNoteId)
+
+| `content`
+| The main text content of the note
+
+| `tags`
+| Set of tags for categorization
+
+| `keywords`
+| Set of keywords for search
+
+| `createdAt`
+| ISO-8601 timestamp when created
+
+| `updatedAt`
+| ISO-8601 timestamp when last modified
+
+| `retrievalCount`
+| Number of times the note has been retrieved
+|===
+
+==== Note Links
+
+Links connect notes with typed relationships:
+
+[cols="1,2"]
+|===
+| Link Type | Use Case
+
+| `RELATES_TO`
+| General relationship between notes
+
+| `DEPENDS_ON`
+| One note depends on another
+
+| `AFFECTS`
+| One thing impacts another
+
+| `PART_OF`
+| Component/container relationship
+
+| `SUPERSEDES`
+| Replaces previous decision/approach
+
+| `CONTRADICTS`
+| Conflicts with another note
+
+| `LINKED_TO`
+| Default relationship type
+|===
+
+Each link includes a `context` field explaining why the relationship exists.
+
+==== Vector Search
+
+Archiledger uses semantic similarity search:
+
+* **Embeddings**: Generated via Spring AI's ONNX Model (all-minilm-l6-v2)
+* **Storage**: LadybugDB's native vector extension
+* **Indexing**: HNSW (Hierarchical Navigable Small World) for fast approximate nearest neighbor matching
+* **Temperature Scaling**: Adjustable similarity scoring
+* **Threshold Filtering**: Filter results by minimum similarity score
+
+==== Graph Traversal
+
+Navigate the knowledge graph through relationships:
+
+* **getLinkedNotes**: Find all notes directly connected to a given note
+* **getNotesUpward**: Traverse upward in the graph to find parent/related notes
+* **readGraph**: Get the entire knowledge graph for visualization

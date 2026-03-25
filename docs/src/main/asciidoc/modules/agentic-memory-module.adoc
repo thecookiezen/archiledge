@@ -1,0 +1,158 @@
+[[agentic-memory-module]]
+=== Agentic Memory Module
+
+The agentic memory module provides AI-powered memory management with automatic content classification, tagging, and knowledge graph evolution.
+
+==== Maven Dependency
+
+[source,xml]
+----
+<dependency>
+    <groupId>com.thecookiezen</groupId>
+    <artifactId>agentic-memory</artifactId>
+    <version>0.0.6</version>
+</dependency>
+----
+
+==== Dependencies
+
+The agentic memory module is built on the https://github.com/embabel/embabel-agent[Embabel framework].
+
+==== Running the Agentic Memory MCP Server
+
+[source,bash]
+----
+# Transient
+java -jar agentic-memory-mcp/target/agentic-memory-mcp-0.0.6.jar
+
+# Persistent
+java -Dladybugdb.data-dir=./ladybugdb-data \
+     -jar agentic-memory-mcp/target/agentic-memory-mcp-0.0.6.jar
+----
+
+NOTE: Requires LLM configuration for AI-powered features.
+
+==== LLM Configuration
+
+Set the following environment variables:
+
+[source,bash]
+----
+export OPENAI_CUSTOM_BASE_URL=https://api.example.com
+export OPENAI_CUSTOM_MODELS=model-name
+export OPENAI_CUSTOM_API_KEY=your_api_key
+export OPENAI_CUSTOM_COMPLETIONS_PATH=/v4/chat/completion
+----
+
+==== Agentic Memory MCP Tools
+
+[cols="1,3"]
+|===
+| Tool | Description
+
+| `memory_vector_search`
+| Perform semantic similarity search across memory notes
+
+| `memory_broaden_search`
+| Given a note ID, expand to find connected/linked notes
+
+| `memory_zoom_out`
+| Traverse upward in the knowledge graph to find parent/related notes
+
+| `agentic_memory_write`
+| Store content with automatic AI classification, tagging, and link generation
+|===
+
+The agent automatically:
+
+. Analyzes content for keywords, context, and tags
+. Searches for similar existing memories
+. Evaluates potential relationships
+. Creates typed links with explanatory context
+. Stores the classified note
+
+==== Using in Java Applications
+
+[source,java]
+----
+import com.thecookiezen.archiledger.agenticmemory.AgenticMemoryAgent;
+import com.thecookiezen.archiledger.agenticmemory.domain.UpsertMemoryRequest;
+
+@Autowired
+private AgenticMemoryAgent agent;
+
+public void storeMemory(String content) {
+    UpsertMemoryRequest request = new UpsertMemoryRequest(content);
+    var result = agent.storeMemory(request);
+    
+    System.out.println("Created note: " + result.id());
+    System.out.println("Tags: " + result.tags());
+    System.out.println("Links: " + result.links().size());
+}
+----
+
+==== Domain Models
+
+===== NoteAnalysis
+
+Result of content analysis:
+
+[source,java]
+----
+public record NoteAnalysis(
+    List<String> keywords,    // Salient concepts ordered by importance
+    String context,           // Summary: topic, arguments, purpose
+    List<String> tags         // Classification categories
+) {}
+----
+
+===== EvolutionDecision
+
+Result of evolution evaluation:
+
+[source,java]
+----
+public record EvolutionDecision(
+    boolean shouldEvolve,              // Whether to modify the graph
+    List<SuggestedLink> suggestedLinks, // Links to create
+    List<String> updatedTags,          // Updated tags for new note
+    List<NeighborUpdate> neighborUpdates // Updates to existing notes
+) {}
+----
+
+===== SuggestedLink
+
+A link to create between notes:
+
+[source,java]
+----
+public record SuggestedLink(
+    String targetId,       // ID of related note
+    String relationType,   // e.g., "related", "extends", "contradicts"
+    String context         // Why this link exists
+) {}
+----
+
+==== Relation Types
+
+The agent uses these relationship types when creating links:
+
+[cols="1,2"]
+|===
+| Type | Use When
+
+| `related`
+| General semantic relationship
+
+| `extends`
+| New note builds upon existing knowledge
+
+| `contradicts`
+| New note conflicts with existing knowledge
+
+| `exemplifies`
+| New note is an example of existing concept
+
+| `supersedes`
+| New note replaces outdated information
+|===

@@ -1,0 +1,56 @@
+[[cors]]
+=== CORS Configuration
+
+Configure Cross-Origin Resource Sharing (CORS) for browser-based clients.
+
+==== Configuration Properties
+
+[cols="2,1,2"]
+|===
+| Property | Default | Description
+
+| `cors.enabled`
+| `false`
+| Enable CORS support
+
+| `cors.allow-any-origin`
+| `false`
+| Set `Access-Control-Allow-Origin` to `*`
+
+| `cors.origins`
+| `[]`
+| Explicit list of permitted origins
+
+| `cors.match-origins`
+| `[]`
+| Regex patterns for dynamic origin matching
+
+| `cors.allow-credentials`
+| `false`
+| Add `Access-Control-Allow-Credentials` header
+
+| `cors.max-age`
+| `7200`
+| Preflight cache duration in seconds
+|===
+
+==== Development Configuration
+
+Permissive configuration for local development:
+
+[source,properties]
+----
+cors.enabled=true
+cors.allow-any-origin=true
+----
+
+==== Production Configuration
+
+Restricted configuration for production:
+
+[source,properties]
+----
+cors.enabled=true
+cors.origins=https://my-secure-frontend.internal
+cors.allow-credentials=true
+----

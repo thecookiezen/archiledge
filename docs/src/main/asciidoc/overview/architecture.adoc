@@ -1,0 +1,37 @@
+[[architecture]]
+=== Architecture
+
+WARNING: This server implements **no authentication** and uses an **embedded graph database** designed for **local development only**. Not recommended for production.
+
+==== Domain Layer
+
+The domain layer contains the core business entities:
+
+* **MemoryNote**: Represents a single atomic note with content, tags, keywords, and timestamps
+* **MemoryNoteId**: Unique identifier for notes
+* **NoteLink**: Typed relationship between notes
+* **LinkDefinition**: Defines a link with context explaining the relationship
+
+==== Application Layer
+
+The application layer orchestrates domain logic:
+
+* **MemoryNoteService**: Main service interface for note operations
+* Handles retrieval count tracking and embedding generation
+* Coordinates between domain and infrastructure layers
+
+==== Infrastructure Layer
+
+The infrastructure layer provides technical implementations:
+
+* **Persistence**: `LadybugMemoryNoteRepository` - stores notes as nodes, links as relationships
+* **Vector Search**: `LadybugEmbeddingsService` - uses LadybugDB's native vector extension with HNSW indexing
+* **MCP**: `McpToolAdapter` - exposes memory operations as MCP tools
+
+==== Agentic Memory
+
+The `agentic-memory` module provides AI-driven memory evolution:
+
+* **AgenticMemoryAgent**: Analyzes notes and suggests new links based on semantic relationships
+* **Context-Aware Links**: Automatically evaluates whether to add, update, or remove links
+* **MemoryNoteSearchOperations**: Implements RAG interfaces for vector search and result expansion

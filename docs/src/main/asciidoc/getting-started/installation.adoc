@@ -1,0 +1,38 @@
+[[installation]]
+=== Installation
+
+==== Prerequisites
+
+* Java 21 or higher
+* Maven 3.9+
+
+==== Building from Source
+
+Clone the repository and build:
+
+[source,bash]
+----
+git clone https://github.com/thecookiezen/archiledger.git
+cd archiledger
+mvn clean package
+----
+
+This builds all modules:
+
+* `core/target/archiledger-core-*.jar` - Core library
+* `mcp/target/archiledger-server-*.jar` - Low-level MCP server
+* `agentic-memory/target/agentic-memory-*.jar` - Agentic memory library
+* `agentic-memory-mcp/target/agentic-memory-mcp-*.jar` - Agentic memory MCP server
+
+==== Maven Dependency
+
+Add the core module as a dependency:
+
+[source,xml]
+----
+<dependency>
+    <groupId>com.thecookiezen</groupId>
+    <artifactId>archiledger-core</artifactId>
+    <version>0.0.6</version>
+</dependency>
+----

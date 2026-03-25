@@ -1,0 +1,70 @@
+[[mcp-clients]]
+=== MCP Client Configuration
+
+Connect to Archiledger via the streamable HTTP endpoint: `http://localhost:8080/mcp`
+
+==== Gemini CLI
+
+Add to `settings.json`:
+
+[source,json]
+----
+{
+  "mcpServers": {
+    "archiledger": {
+      "httpUrl": "http://localhost:8080/mcp"
+    }
+  }
+}
+----
+
+==== VSCode / GitHub Copilot
+
+Add to `settings.json`:
+
+[source,json]
+----
+{
+  "servers": {
+    "archiledger": {
+      "type": "http",
+      "url": "http://localhost:8080/mcp"
+    }
+  }
+}
+----
+
+==== Antigravity
+
+[source,json]
+----
+{
+  "mcpServers": {
+    "archiledger": {
+      "serverUrl": "http://localhost:8080/mcp"
+    }
+  }
+}
+----
+
+==== Custom Port Configuration
+
+If running on a different port:
+
+[source,bash]
+----
+java -Dserver.port=9090 -jar archiledger-server.jar
+----
+
+Update the client configuration:
+
+[source,json]
+----
+{
+  "mcpServers": {
+    "archiledger": {
+      "httpUrl": "http://localhost:9090/mcp"
+    }
+  }
+}
+----

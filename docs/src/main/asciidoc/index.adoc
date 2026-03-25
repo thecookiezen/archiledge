@@ -1,0 +1,55 @@
+= Archiledger
+:doctype: book
+:rev: {project-version}
+:toc: left
+:toclevels: 3
+:numbered:
+:icons: font
+:hide-uri-scheme:
+:docinfo: shared
+
+Archiledger is a specialized **Knowledge Graph** that serves as a **RAG (Retrieval-Augmented Generation)** system with **vector search**. It is exposed as a Model Context Protocol (MCP) server to enable LLM-based assistants to store, connect, and recall information using a graph database.
+
+[[overview]]
+== Overview
+
+include::overview/why-archiledger.adoc[leveloffset=+1]
+
+include::overview/architecture.adoc[leveloffset=+1]
+
+include::overview/concepts.adoc[leveloffset=+1]
+
+[[getting-started]]
+== Getting Started
+
+include::getting-started/installation.adoc[leveloffset=+1]
+
+include::getting-started/quickstart.adoc[leveloffset=+1]
+
+include::getting-started/docker.adoc[leveloffset=+1]
+
+[[modules]]
+== Modules
+
+include::modules/agentic-memory-module.adoc[leveloffset=+1]
+
+include::modules/core-module.adoc[leveloffset=+1]
+
+include::modules/mcp-module.adoc[leveloffset=+1]
+
+[[configuration]]
+== Configuration
+
+include::configuration/server-properties.adoc[leveloffset=+1]
+
+include::configuration/cors.adoc[leveloffset=+1]
+
+[[integrations]]
+== Integrations
+
+include::integrations/mcp-clients.adoc[leveloffset=+1]
+
+[[reference]]
+== Reference
+
+include::reference/mcp-tools.adoc[leveloffset=+1]

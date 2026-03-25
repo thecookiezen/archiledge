@@ -1,0 +1,89 @@
+[[docker]]
+=== Running with Docker
+
+==== Low-Level MCP Server
+
+**Transient (Data lost when container stops):**
+[source,bash]
+----
+docker run -p 8080:8080 registry.hub.docker.com/thecookiezen/archiledger:latest
+----
+
+**Persistent (Data saved to host filesystem):**
+[source,bash]
+----
+docker run -p 8080:8080 \
+  -v /path/to/local/ladybugdb-data:/data/ladybugdb \
+  registry.hub.docker.com/thecookiezen/archiledger:latest
+----
+
+**Custom data directory:**
+[source,bash]
+----
+docker run -p 8080:8080 \
+  -e LADYBUGDB_DATA_DIR=/custom/data/path \
+  -v /path/to/local/data:/custom/data/path \
+  registry.hub.docker.com/thecookiezen/archiledger:latest
+----
+
+==== Agentic Memory MCP Server
+
+Requires LLM configuration for AI-powered features:
+
+[source,bash]
+----
+docker run -p 8080:8080 \
+  -e OPENAI_CUSTOM_BASE_URL=https://api.example.com \
+  -e OPENAI_CUSTOM_MODELS=model-name \
+  -e OPENAI_CUSTOM_API_KEY=your_api_key \
+  registry.hub.docker.com/thecookiezen/archiledger-agentic-memory:latest
+----
+
+With persistent storage:
+
+[source,bash]
+----
+docker run -p 8080:8080 \
+  -v /path/to/local/ladybugdb-data:/data/ladybugdb \
+  -e OPENAI_CUSTOM_BASE_URL=https://api.example.com \
+  -e OPENAI_CUSTOM_MODELS=model-name \
+  -e OPENAI_CUSTOM_API_KEY=your_api_key \
+  registry.hub.docker.com/thecookiezen/archiledger-agentic-memory:latest
+----
+
+==== Environment Variables
+
+[cols="2,1,2"]
+|===
+| Variable | Default | Description
+
+| `LADYBUGDB_DATA_DIR`
+| `/data/ladybugdb`
+| Directory where LadybugDB stores data
+
+| `OPENAI_CUSTOM_BASE_URL`
+| -
+| Base URL for the OpenAI-compatible API
+
+| `OPENAI_CUSTOM_MODELS`
+| -
+| Model name to use
+
+| `OPENAI_CUSTOM_API_KEY`
+| -
+| API key for authentication
+
+| `OPENAI_CUSTOM_COMPLETIONS_PATH`
+| `/v1/chat/completions`
+| Custom completions endpoint path
+|===
+
+NOTE: The data directory must be writable by UID 100 (`spring` user).
+
+==== Docker Tips
+
+. **Persistent Data**: Always mount a volume (`-v`) to preserve your knowledge graph
+. **Container Lifecycle**: Run with `-d` (detached mode)
+. **Port Conflicts**: Map to different port (e.g., `-p 9090:8080`) and update URL
+. **Named Containers**: Use `--name archiledger` for easy management
+. **Debug Logs**: `docker logs archiledger`
