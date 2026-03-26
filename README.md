@@ -1,5 +1,7 @@
 # Archiledger
 
+Archiledger combines Greek *arkhē* (origin, first principle) with "Ledger" - a foundational record serving as the source of truth for AI memory.
+
 **Give your AI assistant a persistent memory and the power to build knowledge graphs.**
 
 Archiledger is a specialized **Knowledge Graph** that serves as a **RAG (Retrieval-Augmented Generation)** system with **vector search**. It is exposed as a [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server to enable LLM-based assistants to store, connect, and recall information using a graph database. Whether you need a personal memory bank that persists across conversations or want to analyze codebases and documents into structured knowledge graphs, Archiledger provides the infrastructure to make your AI truly remember.

@@ -8,7 +8,9 @@
 :hide-uri-scheme:
 :docinfo: shared
 
-Archiledger is a specialized **Knowledge Graph** that serves as a **RAG (Retrieval-Augmented Generation)** system with **vector search**. It is exposed as a Model Context Protocol (MCP) server to enable LLM-based assistants to store, connect, and recall information using a graph database.
+Archiledger combines Greek *arkhē* (origin, first principle) with "Ledger" - a foundational record serving as the source of truth for AI memory.
+
+It is a specialized **Knowledge Graph** that serves as a **RAG (Retrieval-Augmented Generation)** system with **vector search**. It is exposed as a Model Context Protocol (MCP) server to enable LLM-based assistants to store, connect, and recall information using a graph database.
 
 [[overview]]
 == Overview
