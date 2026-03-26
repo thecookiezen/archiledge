@@ -1,0 +1,211 @@
+[[embedding-models]]
+=== Embedding Model Configuration
+
+Archiledger uses vector embeddings for semantic similarity search. By default, it uses a local ONNX model that requires no external API calls.
+
+[IMPORTANT]
+====
+When changing embedding models, you **must** set `LADYBUGDB_EMBEDDING_DIMENSIONS` to match your model's output dimensions. Using mismatched dimensions will cause search to fail.
+====
+
+==== Default: Local ONNX Model (No Configuration Required)
+
+The default embedding model is `all-MiniLM-L6-v2` from HuggingFace, running locally via ONNX runtime:
+
+- **Dimensions**: 384
+- **Model size**: ~80MB (downloaded on first use)
+- **No API key required**
+- **No external dependencies**
+
+[source,bash]
+----
+# No configuration needed - just run:
+java -jar archiledger-server-1.0.0-SNAPSHOT.jar
+----
+
+==== Option 1: Custom HuggingFace ONNX Models
+
+Use any ONNX-compatible embedding model from HuggingFace. The model is downloaded and cached locally.
+
+[[popular-onnx-models]]
+.Popular ONNX Embedding Models
+[cols="2,1,2,3"]
+|===
+| Model | Dimensions | Size | Quality
+
+| all-MiniLM-L6-v2 (default)
+| 384
+| ~80MB
+| Good balance of speed and quality
+
+| bge-small-en-v1.5
+| 384
+| ~120MB
+| Better quality for English text
+
+| bge-base-en-v1.5
+| 768
+| ~400MB
+| High quality for English text
+
+| all-mpnet-base-v2
+| 768
+| ~400MB
+| Excellent quality, slower
+
+| multilingual-e5-small
+| 384
+| ~450MB
+| Multilingual support
+
+| nomic-embed-text-v1
+| 768
+| ~270MB
+| Long context support
+|===
+
+**Example: Using bge-small-en-v1.5**
+
+[source,bash]
+----
+java \
+  -Dspring.ai.embedding.transformer.onnx.modelUri=https://huggingface.co/BAAI/bge-small-en-v1.5/resolve/main/onnx/model.onnx \
+  -Dspring.ai.embedding.transformer.tokenizer.uri=https://huggingface.co/BAAI/bge-small-en-v1.5/resolve/main/tokenizer.json \
+  -Dladybugdb.embedding.dimensions=384 \
+  -jar mcp/target/archiledger-server-1.0.0-SNAPSHOT.jar
+----
+
+Or with environment variables:
+
+[source,bash]
+----
+export SPRING_AI_EMBEDDING_TRANSFORMER_ONNX_MODELURI=https://huggingface.co/BAAI/bge-small-en-v1.5/resolve/main/onnx/model.onnx
+export SPRING_AI_EMBEDDING_TRANSFORMER_TOKENIZER_URI=https://huggingface.co/BAAI/bge-small-en-v1.5/resolve/main/tokenizer.json
+export LADYBUGDB_EMBEDDING_DIMENSIONS=384
+
+java -jar mcp/target/archiledger-server-1.0.0-SNAPSHOT.jar
+----
+
+==== Option 2: OpenAI-Compatible APIs
+
+Use embedding models from OpenAI, ZhiPu AI, Mistral, or any OpenAI-compatible API provider.
+
+**Example: Using OpenAI text-embedding-3-small**
+
+[source,bash]
+----
+export SPRING_AI_OPENAI_BASE_URL=https://api.openai.com
+export SPRING_AI_OPENAI_API_KEY=sk-your-api-key
+export SPRING_AI_OPENAI_EMBEDDING_OPTIONS_MODEL=text-embedding-3-small
+export LADYBUGDB_EMBEDDING_DIMENSIONS=1536
+
+java -jar mcp/target/archiledger-server-1.0.0-SNAPSHOT.jar
+----
+
+==== Option 3: Ollama Local Models
+
+Use local embedding models served by Ollama via its OpenAI-compatible endpoint.
+
+.Prerequisites
+- Install Ollama: https://ollama.ai
+- Pull an embedding model: `ollama pull nomic-embed-text`
+
+[[ollama-embedding-models]]
+.Popular Ollama Embedding Models
+[cols="2,1,3"]
+|===
+| Model | Dimensions | Notes
+
+| nomic-embed-text
+| 768
+| Popular, good quality
+
+| mxbai-embed-large
+| 1024
+| High quality
+
+| all-minilm
+| 384
+| Fast, lightweight
+
+| snowflake-arctic-embed
+| 1024
+| Excellent quality
+|===
+
+**Example: Using Ollama with nomic-embed-text**
+
+[source,bash]
+----
+# First, ensure Ollama is running and model is pulled
+ollama pull nomic-embed-text
+
+# Then start Archiledger with Ollama embedding
+export SPRING_AI_OPENAI_BASE_URL=http://localhost:11434
+export SPRING_AI_OPENAI_EMBEDDING_OPTIONS_MODEL=nomic-embed-text
+export LADYBUGDB_EMBEDDING_DIMENSIONS=768
+
+java -jar mcp/target/archiledger-server-1.0.0-SNAPSHOT.jar
+----
+
+==== Docker Configuration
+
+When running in Docker, pass environment variables with `-e`:
+
+**OpenAI via Docker:**
+
+[source,bash]
+----
+docker run -p 8080:8080 \
+  -v ./ladybugdb-data:/data/ladybugdb \
+  -e SPRING_AI_OPENAI_BASE_URL=https://api.openai.com \
+  -e SPRING_AI_OPENAI_API_KEY=sk-your-api-key \
+  -e SPRING_AI_OPENAI_EMBEDDING_OPTIONS_MODEL=text-embedding-3-small \
+  -e LADYBUGDB_EMBEDDING_DIMENSIONS=1536 \
+  registry.hub.docker.com/thecookiezen/archiledger:latest
+----
+
+==== Environment Variables Reference
+
+[cols="2,1,3"]
+|===
+| Variable | Default | Description
+
+| `SPRING_AI_EMBEDDING_TRANSFORMER_ONNX_MODELURI`
+| (Spring AI default)
+| HuggingFace ONNX model URL
+
+| `SPRING_AI_EMBEDDING_TRANSFORMER_TOKENIZER_URI`
+| (Spring AI default)
+| HuggingFace tokenizer JSON URL
+
+| `SPRING_AI_OPENAI_BASE_URL`
+| -
+| OpenAI-compatible API base URL
+
+| `SPRING_AI_OPENAI_API_KEY`
+| -
+| API key for authentication
+
+| `SPRING_AI_OPENAI_EMBEDDING_OPTIONS_MODEL`
+| -
+| Embedding model name
+
+| `LADYBUGDB_EMBEDDING_DIMENSIONS`
+| 384
+| Vector dimensions (must match model)
+|===
+
+==== Switching Models on Existing Data
+
+[WARNING]
+====
+Changing embedding models on an existing database will cause search inconsistencies. The stored embeddings won't match the new model's embeddings.
+
+**Recommended approach:**
+
+. Export your notes (using `read_graph` MCP tool)
+. Delete the database directory
+. Start with the new embedding model
+. Recreate notes (embeddings will be generated with the new model)
+====

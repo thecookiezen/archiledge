@@ -50,3 +50,5 @@ java -Dladybugdb.data-dir=./ladybugdb-data \
 
 The server runs on port **8080** with the MCP endpoint at `http://localhost:8080/mcp`.
 
+TIP: By default, the server uses a local ONNX embedding model (`all-MiniLM-L6-v2`). See xref:configuration/embedding-models.adoc[Embedding Model Configuration] to use OpenAI, Ollama, or custom HuggingFace models.
+

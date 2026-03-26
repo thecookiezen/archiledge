@@ -23,7 +23,9 @@ server.port=8080
 | LadybugDB extension cache directory
 |===
 
-Embeddings are generated via Spring AI's ONNX Model (downloading `all-minilm-l6-v2`), then stored using LadybugDB's native vector extension with HNSW indexing for fast approximate nearest neighbor matching.
+Embeddings are stored using LadybugDB's native vector extension with HNSW indexing for fast approximate nearest neighbor matching.
+
+See xref:configuration/embedding-models.adoc[Embedding Model Configuration] for customizing the embedding model.
 
 ==== Data Directory
 

@@ -49,6 +49,9 @@ public class LadybugDBConfig {
     @Value("${ladybugdb.data-dir:}")
     private String dataDir;
 
+    @Value("${ladybugdb.embeddingDimensions:384}")
+    private int embeddingDimensions;
+
     @Bean(destroyMethod = "close")
     public Database database() {
         Database db;
@@ -81,7 +84,7 @@ public class LadybugDBConfig {
                 logger.info("MemoryNote node table ready");
             }
             try (var re = conn.query(
-                    "CREATE NODE TABLE IF NOT EXISTS NoteEmbedding(noteId STRING PRIMARY KEY, embedding FLOAT[384])")) {
+                    "CREATE NODE TABLE IF NOT EXISTS NoteEmbedding(noteId STRING PRIMARY KEY, embedding FLOAT[%d])".formatted(embeddingDimensions))) {
                 if (!re.isSuccess()) {
                     throw new RuntimeException("Failed to create NoteEmbedding table: " + re.getErrorMessage());
                 }

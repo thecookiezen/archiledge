@@ -335,7 +335,77 @@ cors.match-origins=^http://localhost:\\d+$,^https://.*\\.my-company\\.com$
 |----------|---------|-------------|
 | `ladybugdb.extension-dir` | `~/.lbug/extensions` | LadybugDB extension cache directory |
 
-Embeddings are generated via Spring AI's ONNX Model (downloading `all-minilm-l6-v2`), then stored using LadybugDB's native vector extension with HNSW indexing for fast approximate nearest neighbor matching.
+Embeddings are stored using LadybugDB's native vector extension with HNSW indexing.
+
+### Embedding Model Configuration
+
+By default, Archiledger uses a local ONNX model (`all-MiniLM-L6-v2`, 384 dimensions) that requires no external API. You can customize the embedding model using environment variables.
+
+#### Option 1: Custom HuggingFace ONNX Models
+
+Use any ONNX-compatible model from HuggingFace:
+
+```bash
+export SPRING_AI_EMBEDDING_TRANSFORMER_ONNX_MODELURI=https://huggingface.co/BAAI/bge-small-en-v1.5/resolve/main/onnx/model.onnx
+export SPRING_AI_EMBEDDING_TRANSFORMER_TOKENIZER_URI=https://huggingface.co/BAAI/bge-small-en-v1.5/resolve/main/tokenizer.json
+export LADYBUGDB_EMBEDDING_DIMENSIONS=384
+
+java -jar mcp/target/archiledger-server-1.0.0-SNAPSHOT.jar
+```
+
+#### Option 2: OpenAI-Compatible APIs (OpenAI, ZhiPu AI, Mistral, etc.)
+
+```bash
+# OpenAI
+export SPRING_AI_OPENAI_BASE_URL=https://api.openai.com
+export SPRING_AI_OPENAI_API_KEY=sk-your-api-key
+export SPRING_AI_OPENAI_EMBEDDING_OPTIONS_MODEL=text-embedding-3-small
+export LADYBUGDB_EMBEDDING_DIMENSIONS=1536
+
+# ZhiPu AI
+export SPRING_AI_OPENAI_BASE_URL=https://open.bigmodel.cn/api/paas/v4
+export SPRING_AI_OPENAI_API_KEY=your-zhipu-api-key
+export SPRING_AI_OPENAI_EMBEDDING_OPTIONS_MODEL=embedding-3
+export LADYBUGDB_EMBEDDING_DIMENSIONS=2048
+
+java -jar mcp/target/archiledger-server-1.0.0-SNAPSHOT.jar
+```
+
+#### Option 3: Ollama Local Models
+
+```bash
+# Ensure Ollama is running: ollama pull nomic-embed-text
+export SPRING_AI_OPENAI_BASE_URL=http://localhost:11434
+export SPRING_AI_OPENAI_EMBEDDING_OPTIONS_MODEL=nomic-embed-text
+export LADYBUGDB_EMBEDDING_DIMENSIONS=768
+
+java -jar mcp/target/archiledger-server-1.0.0-SNAPSHOT.jar
+```
+
+#### Docker with Custom Embeddings
+
+```bash
+# Ollama
+docker run -p 8080:8080 \
+  --add-host=host.docker.internal:host-gateway \
+  -e SPRING_AI_OPENAI_BASE_URL=http://host.docker.internal:11434 \
+  -e SPRING_AI_OPENAI_EMBEDDING_OPTIONS_MODEL=nomic-embed-text \
+  -e LADYBUGDB_EMBEDDING_DIMENSIONS=768 \
+  registry.hub.docker.com/thecookiezen/archiledger:latest
+```
+
+#### Embedding Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `SPRING_AI_EMBEDDING_TRANSFORMER_ONNX_MODELURI` | HuggingFace ONNX model URL |
+| `SPRING_AI_EMBEDDING_TRANSFORMER_TOKENIZER_URI` | HuggingFace tokenizer JSON URL |
+| `SPRING_AI_OPENAI_BASE_URL` | OpenAI-compatible API base URL |
+| `SPRING_AI_OPENAI_API_KEY` | API key for authentication |
+| `SPRING_AI_OPENAI_EMBEDDING_OPTIONS_MODEL` | Embedding model name |
+| `LADYBUGDB_EMBEDDING_DIMENSIONS` | Vector dimensions (must match model, default: 384) |
+
+> **Important:** When changing embedding models, the dimensions must match your model's output. Common dimensions: all-MiniLM-L6-v2 (384), nomic-embed-text (768), text-embedding-3-small (1536).
 
 ---
 

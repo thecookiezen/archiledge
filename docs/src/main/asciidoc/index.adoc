@@ -44,6 +44,8 @@ include::modules/mcp-module.adoc[leveloffset=+1]
 
 include::configuration/server-properties.adoc[leveloffset=+1]
 
+include::configuration/embedding-models.adoc[leveloffset=+1]
+
 include::configuration/cors.adoc[leveloffset=+1]
 
 [[integrations]]
